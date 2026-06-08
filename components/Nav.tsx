@@ -21,7 +21,7 @@ function Navbar({ className }: { className?: string }) {
         <MenuItem setActive={setActive} active={active} item="الاتحاد">
           <div className="flex flex-col justify-end space-y-4 text-sm">
             <HoveredLink href="/presidency">الرئيسية</HoveredLink>
-            <HoveredLink href="/federation">عن الاتحاد</HoveredLink>
+            <HoveredLink href="/contact">عن الاتحاد</HoveredLink>
           </div>
         </MenuItem>
         <MenuItem setActive={setActive} active={active} item="الخدمات">
