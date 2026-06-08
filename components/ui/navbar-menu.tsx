@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
 import { motion } from "motion/react";
+import Image from "next/image";
+import Link from "next/link";
 
 
 
@@ -39,7 +41,7 @@ export const MenuItem = ({
           transition={transition}
         >
           {active === item && (
-            <div className="absolute top-[calc(100%_+_1.2rem)] left-1/2 transform -translate-x-1/2 pt-4">
+            <div className="absolute top-[calc(100%_+_0.9rem)] left-1/2 transform -translate-x-1/2 pt-1">
               <motion.div
                 transition={transition}
                 layoutId="active" // layoutId ensures smooth animation
@@ -68,12 +70,27 @@ export const Menu = ({
   children: React.ReactNode;
 }) => {
   return (
-    <nav
-      onMouseLeave={() => setActive(null)} // resets the state
-      className="relative rounded-full border border-transparent dark:bg-black dark:border-white/[0.2] bg-white shadow-input flex justify-center space-x-4 px-8 py-6 "
-    >
-      {children}
-    </nav>
+<nav
+  onMouseLeave={() => setActive(null)}
+  className="relative flex items-center rounded-full border border-transparent bg-white px-8 py-4 shadow-input dark:bg-black/20"
+>
+  {/* Logo at start */}
+  <Link href="/" className="relative z-10 flex shrink-0 items-center">
+    <Image
+      src="/logo.png"
+      alt="Saudi Table Tennis Federation"
+      width={120}
+      height={40}
+      priority
+      className="h-10 w-auto object-contain"
+    />
+  </Link>
+
+  {/* Menu items centered in full nav */}
+  <div className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center space-x-4">
+    {children}
+  </div>
+</nav>
   );
 };
 
@@ -82,14 +99,22 @@ export const ProductItem = ({
   description,
   href,
   src,
+  lang = "ar",
 }: {
   title: string;
   description: string;
   href: string;
   src: string;
+  lang?: "ar" | "en";
 }) => {
+  const isAr = lang === "ar";
+
   return (
-    <a href={href} className="flex space-x-2">
+    <a
+      href={href}
+      dir={isAr ? "rtl" : "ltr"}
+      className={`flex gap-2 ${isAr ? "flex-row-reverse" : "flex-row"}`}
+    >
       <img
         src={src}
         width={140}
@@ -97,11 +122,13 @@ export const ProductItem = ({
         alt={title}
         className="shrink-0 rounded-md shadow-2xl"
       />
-      <div>
-        <h4 className="text-xl font-bold mb-1 text-black dark:text-white">
+
+      <div className={isAr ? "text-right" : "text-left"}>
+        <h4 className="mb-1 text-xl font-bold text-black dark:text-white">
           {title}
         </h4>
-        <p className="text-neutral-700 text-sm max-w-[10rem] dark:text-neutral-300">
+
+        <p className="max-w-[10rem] text-sm text-neutral-700 dark:text-neutral-300">
           {description}
         </p>
       </div>
@@ -113,7 +140,7 @@ export const HoveredLink = ({ children, ...rest }: any) => {
   return (
     <a
       {...rest}
-      className="text-neutral-700 dark:text-neutral-200 hover:text-black "
+      className="text-neutral-700 dark:text-neutral-200  "
     >
       {children}
     </a>
