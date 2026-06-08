@@ -436,10 +436,88 @@ function GlobalKeyframes() {
         0%   { filter: brightness(1); }
         100% { filter: brightness(1.1); }
       }
+
+      .hero-main-grid {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 48px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 48px;
+        min-height: 100vh;
+      }
+
+      .hero-visual-wrap {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 600px;
+      }
+
+      .hero-main-image {
+        position: relative;
+        width: min(100%, 620px);
+        height: min(52vw, 620px);
+        min-height: 440px;
+      }
+
+      @media (max-width: 1024px) {
+        .hero-main-grid {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          padding: 120px 32px 80px;
+          min-height: auto;
+          text-align: center;
+        }
+
+        .hero-main-grid > div:first-child {
+          align-items: center;
+        }
+
+        .hero-visual-wrap {
+          min-height: auto;
+          order: 2;
+        }
+
+        .hero-main-image {
+          width: min(82vw, 560px);
+          height: min(82vw, 560px);
+          min-height: 340px;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .hero-main-grid {
+          padding: 110px 20px 90px;
+          gap: 12px;
+        }
+
+        .hero-main-image {
+          width: min(96vw, 420px);
+          height: min(96vw, 420px);
+          min-height: 300px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .hero-main-grid {
+          padding: 96px 18px 82px;
+        }
+
+        .hero-main-image,
+        .hero-visual-wrap {
+          display: none;
+        }
+      }
     `}</style>
   );
 }
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface HeroSectionProps {
@@ -452,6 +530,7 @@ export default function HeroSection({ lang = "ar" }: HeroSectionProps) {
 
   // Subtle parallax on mouse move
   useEffect(() => {
+    if (window.innerWidth <= 1024) return;
     const section = document.getElementById("hero-section");
     if (!section || !visualRef.current) return;
 
@@ -547,34 +626,26 @@ export default function HeroSection({ lang = "ar" }: HeroSectionProps) {
         <ParticleCanvas />
 
         {/* ── Main content grid ── */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 3,
-            width: "100%",
-            maxWidth: 1280,
-            margin: "0 auto",
-            padding: "0 48px",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            alignItems: "center",
-            gap: 48,
-            minHeight: "100vh",
-          }}
-        >
-          <HeroContent lang={lang} />
+{/* ── Main content grid ── */}
+<div className="hero-main-grid">
+  <HeroContent lang={lang} />
 
-          <div ref={visualRef} style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 600 }}>
-          <Image
-            src={COLLAGE_IMAGE_SRC}
-            alt="Saudi table tennis players collage"
-            fill
-            priority
-            sizes="(max-width: 900px) 340px, 520px"
-            style={{ objectFit: "cover", objectPosition: "center" }}
-          />
-          </div>
-        </div>
+  <div ref={visualRef} className="hero-visual-wrap">
+    <div className="hero-main-image">
+      <Image
+        src={COLLAGE_IMAGE_SRC}
+        alt="Saudi table tennis players collage"
+        fill
+        priority
+        sizes="(max-width: 520px) 0px, (max-width: 680px) 92vw, (max-width: 1024px) 78vw, 560px"
+        style={{
+          objectFit: "contain",
+          objectPosition: "center",
+        }}
+      />
+    </div>
+  </div>
+</div>
         {/* Bottom fade to black */}
           <div
             aria-hidden="true"
@@ -583,7 +654,7 @@ export default function HeroSection({ lang = "ar" }: HeroSectionProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              height: "160px",
+              height: "120px",
               zIndex: 2,
               pointerEvents: "none",
               background:

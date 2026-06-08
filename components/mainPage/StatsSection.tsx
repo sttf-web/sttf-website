@@ -200,31 +200,42 @@ export default function StatsSection({
         <path d="M0,0 H1440 V80 C1100,20 760,20 0,90 Z" fill="#005043" />
       </svg>
 
-      {/* Bottom curve — hill shape that bleeds into the PromoSection green */}
+
+      {/* Bottom curve — desktop/tablet above 760px */}
       <svg
         aria-hidden="true"
         viewBox="0 0 1440 320"
         preserveAspectRatio="none"
-        style={{
-          position: "absolute",
-          bottom: -2,
-          left: 0,
-          width: "100%",
-          height: 260,
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
+        className="stats-bottom-curve stats-bottom-curve-desktop"
       >
         <defs>
-          <linearGradient id="sttfHill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="sttfHillDesktop" x1="0" y1="0" x2="0" y2="1">
             <stop offset="100%" stopColor="#35CE83" stopOpacity="1" />
-            <stop offset="0%"  stopColor="#3dd68c" stopOpacity="0.85" />
           </linearGradient>
         </defs>
-        {/* Full hill — peak near centre, fills completely to bottom edge */}
+
         <path
-          d="M0,320 L0,620 C280,140 600,80 720,80 C1100,80 1260,220 1440,310 L1440,320 Z"
-          fill="url(#sttfHill)"
+          d="M0,320 L100,515 C280,140 600,80 720,80 C1100,80 1260,220 1440,310 L1440,320 Z"
+          fill="url(#sttfHillDesktop)"
+        />
+      </svg>
+
+      {/* Bottom curve — mobile below 760px */}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 1440 320"
+        preserveAspectRatio="none"
+        className="stats-bottom-curve stats-bottom-curve-mobile"
+      >
+        <defs>
+          <linearGradient id="sttfHillMobile" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="100%" stopColor="#35CE83" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+
+        <path
+          d="M0,320 C240,120 480,70 720,70 C960,70 1200,120 1440,320 L1440,320 L0,320 Z"
+          fill="url(#sttfHillMobile)"
         />
       </svg>
 
@@ -266,18 +277,42 @@ export default function StatsSection({
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 860px) {
+<style>{`
+  .stats-bottom-curve {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
 
-        }
-        @media (max-width: 760px) {
-          section > div > div {
-            grid-template-columns: 1fr !important;
-            gap: 36px !important;
-            text-align: center;
-          }
-        }
-      `}</style>
+  .stats-bottom-curve-desktop {
+    display: block;
+    height: 160px;
+  }
+
+  .stats-bottom-curve-mobile {
+    display: none;
+    height: clamp(130px, 18vw, 180px);
+  }
+
+  @media (max-width: 770px) {
+    section > div > div {
+      grid-template-columns: 1fr !important;
+      gap: 36px !important;
+      text-align: center;
+    }
+
+    .stats-bottom-curve-desktop {
+      display: none;
+    }
+
+    .stats-bottom-curve-mobile {
+      display: block;
+    }
+  }
+`}</style>
     </section>
   );
 }
@@ -303,6 +338,8 @@ function StatBlock({
         alignItems: "center",
         justifyContent: "center",
         gap: 18,
+        marginTop: 20,
+        marginBottom: 40,
         transform: animate ? "translateY(0)" : "translateY(12px)",
         opacity: animate ? 1 : 0,
         transition: "opacity 0.6s ease, transform 0.6s ease",
@@ -335,7 +372,7 @@ function StatBlock({
             fontSize: "clamp(18px, 2.2vw, 28px)",
             fontWeight: 500,
             color: "rgba(255,255,255,0.85)",
-            marginTop: 10,
+            marginTop: 20,
           }}
         >
           {item.label[lang]}

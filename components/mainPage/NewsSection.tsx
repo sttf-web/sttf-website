@@ -329,6 +329,7 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
   }, []);
 
   return (
+    
     <section
       ref={sectionRef}
       dir={isAr ? "rtl" : "ltr"}
@@ -375,6 +376,7 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
 
         {/* Cards row */}
         <div
+          className="news-cards-row"
           style={{
             display: "flex",
             gap: 0,
@@ -393,6 +395,18 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
           ))}
         </div>
       </div>
+<style jsx global>{`
+  @media (max-width: 768px) {
+    .news-cards-row {
+      flex-direction: column !important;
+    }
+
+    .news-cards-row > a {
+      flex: none !important;
+      width: 100% !important;
+    }
+  }
+`}</style>
     </section>
   );
 }

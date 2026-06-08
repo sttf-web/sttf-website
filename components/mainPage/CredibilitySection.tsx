@@ -273,20 +273,6 @@ export default function CredibilitySection({ lang = "ar" }: CredibilitySectionPr
           }}
         />
 
-        {/* Glow blob top-right */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -20,
-            right: 180,
-            width: 320,
-            height: 320,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(0,200,150,0.14) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: 1280, margin: "0 auto" }}>
           <PartnersStrip lang={lang} visible={visible} />
@@ -345,7 +331,7 @@ export default function CredibilitySection({ lang = "ar" }: CredibilitySectionPr
             height: "clamp(60px, 8vw, 120px)",
           }}
         >
-          <path d="M0,120 C400,0 1040,0 1440,120 L1440,120 H0 Z" fill="#050f0a" />
+          <path d="M0,120 C400,0 1040,0 1440,120 L1440,120 H0 Z" fill="#000000" />
         </svg>
       </div>
     </section>
