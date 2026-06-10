@@ -30,7 +30,7 @@ export const MenuItem = ({
     <div onMouseEnter={() => setActive(item)} className="relative ">
       <motion.p
         transition={{ duration: 0.3 }}
-        className="cursor-pointer text-black hover:opacity-[0.9] dark:text-white"
+        className="cursor-pointer text-black hover:opacity-[0.9] dark:text-white text-white hover:border hover:rounded-full hover:bg-gray-200 hover:text-black px-2 py-1"
       >
         {item}
       </motion.p>
@@ -72,12 +72,12 @@ export const Menu = ({
   return (
 <nav
   onMouseLeave={() => setActive(null)}
-  className="relative flex items-center rounded-full border border-transparent bg-white px-8 py-4 shadow-input dark:bg-black/20"
+  className="relative flex items-center rounded-full border border-transparent bg-white/20 px-8 py-4 shadow-input dark:bg-black/20"
 >
   {/* Logo at start */}
-  <Link href="/" className="relative z-10 flex shrink-0 items-center">
+  <Link href="/" className="relative z-10 flex shrink-0 items-center hover:scale-[1.05] active:scale-[0.99]">
     <Image
-      src="/logo.png"
+      src="/Logo.png"
       alt="Saudi Table Tennis Federation"
       width={120}
       height={40}
