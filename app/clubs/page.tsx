@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, ChevronLeft, UsersRound } from "lucide-react";
+import {
+  Building2,
+  UsersRound,
+  ChevronLeft,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
-type LeagueKey = "men" | "women" | "youth";
+type ApiClub = {
+  id: string;
+  clubName: string;
+  location: string | null;
+  logo: string | null;
+  _count: {
+    players: number;
+  };
+};
 
 type Club = {
   id: string;
@@ -12,116 +27,60 @@ type Club = {
   city: string;
   playersCount: number;
   logo: string;
-  website: string;
-  leagues: LeagueKey[];
+  href: string;
 };
 
-
-const CLUBS: Club[] = [
-  {
-    id: "ittihad",
-    name: "نادي الاتحاد",
-    city: "جدة",
-    playersCount: 4,
-    logo: "/images/clubs/club1.png",
-    website: "https://www.ittihadclub.sa",
-    leagues: ["men", "women"],
-  },
-  {
-    id: "alfateh",
-    name: "نادي الفتح",
-    city: "الأحساء",
-    playersCount: 4,
-    logo: "/images/clubs/club2.png",
-    website: "https://www.alfatehclub.com",
-    leagues: ["men"],
-  },
-  {
-    id: "ibtisam",
-    name: "نادي الابتسام",
-    city: "القطيف",
-    playersCount: 4,
-    logo: "/images/clubs/club3.png",
-    website: "#",
-    leagues: ["men", "youth"],
-  },
-  {
-    id: "almowj",
-    name: "نادي العلا",
-    city: "الخبر",
-    playersCount: 4,
-    logo: "/images/clubs/club4.png",
-    website: "https://alulaclub.sa/",
-    leagues: ["men"],
-  },
-  {
-    id: "shabab",
-    name: "نادي الشباب",
-    city: "الرياض",
-    playersCount: 4,
-    logo: "/images/clubs/club5.png",
-    website: "https://alshabab-sc.sa",
-    leagues: ["men", "women"],
-  },
-  {
-    id: "hattin",
-    name: "نادي الصواري",
-    city: "صامطة",
-    playersCount: 4,
-    logo: "/images/clubs/club6.png",
-    website: "https://x.com/Nadialsawari",
-    leagues: ["men"],
-  },
-  {
-    id: "qadisiyah",
-    name: "نادي القادسية",
-    city: "الخبر",
-    playersCount: 4,
-    logo: "/images/clubs/club7.png",
-    website: "https://alqadsiah.sa",
-    leagues: ["men", "women"],
-  },
-  {
-    id: "khaleej",
-    name: "نادي الخليج",
-    city: "سيهات",
-    playersCount: 4,
-    logo: "/images/clubs/club8.png",
-    website: "https://khaleejclub.sa",
-    leagues: ["men"],
-  },
-  {
-    id: "mudhar",
-    name: "نادي مضر",
-    city: "القطيف",
-    playersCount: 4,
-    logo: "/images/clubs/club9.png",
-    website: "https://mudharclub.org/",
-    leagues: ["men", "youth"],
-  },
-  {
-    id: "alsalam",
-    name: "نادي السلام",
-    city: "العوامية",
-    playersCount: 4,
-    logo: "/images/clubs/club11.png",
-    website: "https://nadialsalam.sa/",
-    leagues: ["men"],
-  },
-  {
-    id: "alwehda",
-    name: "نادي الوحدة",
-    city: "مكة المكرمة",
-    playersCount: 4,
-    logo: "/images/clubs/club12.png",
-    website: "https://alwehdaclub.sa",
-    leagues: ["men", "women"],
-  },
-];
-
 export default function ClubsPage() {
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchClubs() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const res = await fetch("/api/clubs", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch clubs");
+        }
+
+        const formattedClubs: Club[] = (data.clubs || []).map(
+          (club: ApiClub) => ({
+            id: club.id,
+            name: club.clubName,
+            logo: club.logo || "/club/logo/default.png",
+            city: club.location || "غير محدد",
+            playersCount: club._count.players,
+            href: `/clubs/${club.id}`,
+          })
+        );
+
+        setClubs(formattedClubs);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : "Failed to fetch clubs"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchClubs();
+  }, []);
+
   return (
-    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black text-white">
+    <main
+      dir="rtl"
+      className="relative min-h-screen overflow-hidden bg-black text-white"
+    >
       <BackgroundEffects />
 
       <section className="relative overflow-hidden bg-[#043F2A] px-6 pb-12 pt-20 text-center">
@@ -136,38 +95,62 @@ export default function ClubsPage() {
           <p className="mx-auto max-w-2xl text-sm leading-7 text-white/75 md:text-base">
             أندية دوري كرة الطاولة في المملكة العربية السعودية
           </p>
-
         </div>
       </section>
 
       <section className="relative mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
         <div className="mb-8 flex items-center justify-between gap-5">
           <div>
-            <p className="text-sm font-bold text-[#20E58C]">الأندية المشاركة</p>
+            <p className="text-sm font-bold text-[#20E58C]">
+              الأندية المشاركة
+            </p>
+
             <h2 className="mt-2 text-2xl font-black md:text-4xl">
               أندية دوري جاهز لكرة الطاولة
             </h2>
           </div>
         </div>
 
-        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-          {CLUBS.map((club) => (
-            <ClubCard key={club.id} club={club} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex min-h-[260px] items-center justify-center rounded-[2rem] border border-white/10 bg-white/5">
+            <div className="flex items-center gap-3 text-sm font-bold text-white/70">
+              <Loader2 className="h-5 w-5 animate-spin text-[#20E58C]" />
+              جاري تحميل الأندية...
+            </div>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">
+            <AlertCircle className="h-5 w-5" />
+            {error}
+          </div>
+        ) : null}
+
+        {!loading && !error && clubs.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-white/15 bg-white/5 p-10 text-center">
+            <p className="text-sm font-semibold text-white/60">
+              لا توجد أندية متاحة حالياً.
+            </p>
+          </div>
+        ) : null}
+
+        {!loading && !error && clubs.length > 0 ? (
+          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            {clubs.map((club) => (
+              <ClubCard key={club.id} club={club} />
+            ))}
+          </div>
+        ) : null}
       </section>
     </main>
   );
 }
 
 function ClubCard({ club }: { club: Club }) {
-  const isExternal = club.website && club.website !== "#";
-
   return (
     <Link
-      href={club.website}
-      target={isExternal ? "_blank" : undefined}
-      rel={isExternal ? "noopener noreferrer" : undefined}
+      href={club.href}
       className="group relative overflow-hidden rounded-[1.75rem] border border-[#20E58C]/45 bg-[#06140E]/95 p-5 shadow-2xl shadow-black/30 transition hover:-translate-y-1 hover:border-[#20E58C] hover:bg-[#082016]"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(32,229,140,0.18),transparent_42%)] opacity-60 transition group-hover:opacity-100" />

@@ -23,6 +23,7 @@ export default function ContactPage() {
 
     const payload = {
       name: formData.get("name"),
+      title: formData.get("title"),
       email: formData.get("email"),
       phone: formData.get("phone"),
       message: formData.get("message"),
@@ -40,8 +41,10 @@ export default function ContactPage() {
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error("Failed to send message");
+        throw new Error(data.error || "Failed to send message");
       }
 
       setStatus("success");
@@ -56,7 +59,6 @@ export default function ContactPage() {
 
   return (
     <main dir="rtl" className="relative min-h-screen overflow-hidden bg-[#05120C] text-white">
-      {/* Dot grid background */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -67,7 +69,6 @@ export default function ContactPage() {
         }}
       />
 
-      {/* Circular flares */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -left-32 top-56 h-80 w-80 rounded-full bg-[#18B56F]/20 blur-[90px]"
@@ -175,6 +176,12 @@ export default function ContactPage() {
               </div>
 
               <Field
+                label="عنوان الرسالة"
+                name="title"
+                placeholder="مثال: استفسار عام"
+              />
+
+              <Field
                 label="البريد الإلكتروني"
                 name="email"
                 type="email"
@@ -229,28 +236,6 @@ export default function ContactPage() {
   );
 }
 
-function ContactCard({
-  icon,
-  title,
-  value,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="group rounded-[1.75rem] border border-[#18B56F]/40 bg-[#202020]/90 p-5 text-center shadow-lg shadow-black/25 backdrop-blur transition hover:-translate-y-1 hover:border-[#18B56F] hover:bg-[#262626]">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#18B56F]/15 text-[#20E58C] transition group-hover:bg-[#18B56F] group-hover:text-white">
-        {icon}
-      </div>
-
-      <h3 className="text-base font-black text-white">{title}</h3>
-
-      <p className="mt-2 break-words text-sm text-white/70">{value}</p>
-    </div>
-  );
-}
-
 function Field({
   label,
   name,
@@ -260,7 +245,7 @@ function Field({
   label: string;
   name: string;
   type?: string;
-  placeholder: string;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -275,10 +260,32 @@ function Field({
         id={name}
         name={name}
         type={type}
-        required
+        required={name !== "phone"}
         placeholder={placeholder}
         className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-4 text-right text-sm text-[#111827] shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#057A4B] focus:ring-4 focus:ring-[#057A4B]/15"
       />
+    </div>
+  );
+}
+
+function ContactCard({
+  icon,
+  title,
+  value,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl shadow-black/20">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#18B56F]/15 text-[#18B56F]">
+        {icon}
+      </div>
+
+      <h3 className="text-sm font-bold text-white/70">{title}</h3>
+
+      <p className="mt-2 text-sm font-black text-white">{value}</p>
     </div>
   );
 }

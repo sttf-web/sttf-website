@@ -77,7 +77,7 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
 
   return (
     <a
-      href={article.href}
+      href={"/news"}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -279,7 +279,7 @@ function SectionHeader({ lang }: { lang: "ar" | "en" }) {
 
       {/* View all link */}
       <a
-        href="#"
+        href="/news"
         style={{
           fontSize: 13,
           fontWeight: 600,

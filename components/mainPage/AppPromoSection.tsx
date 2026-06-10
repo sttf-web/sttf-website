@@ -165,7 +165,7 @@ export default function AppPromoSection({
               justifyContent: isAr ? "flex-start" : "flex-end",
             }}
           >
-            <a
+            {/* <a
               href="#"
               className="app-promo-cta"
               onMouseEnter={(e) => {
@@ -181,7 +181,7 @@ export default function AppPromoSection({
             >
               <span>📱</span>
               <span>{t.cta}</span>
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

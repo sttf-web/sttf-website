@@ -23,6 +23,7 @@ function Navbar({ className }: { className?: string }) {
 
           <div className="flex flex-col justify-end space-y-4 text-sm text-white">
             <HoveredLink href="/presidency">الرئيسية</HoveredLink>
+            <HoveredLink href="/news">الأخبار</HoveredLink>
             <HoveredLink href="/contact">عن الاتحاد</HoveredLink>
           </div>
         </MenuItem>
@@ -44,7 +45,7 @@ function Navbar({ className }: { className?: string }) {
 
             <ProductItem
               title="الدوري"
-              href="/tournament"
+              href="/league"
               src="/images/nav/tournament.png"
               description="جداول وترتيب الدوري."
             />
@@ -57,12 +58,12 @@ function Navbar({ className }: { className?: string }) {
             />
           </div>
         </MenuItem>
-        <MenuItem setActive={setActive} active={active} item="الحوكمة">
+        {/* <MenuItem setActive={setActive} active={active} item="الحوكمة">
           <div className="flex flex-col space-y-4 text-sm">
             <HoveredLink href="/board">اللوائح</HoveredLink>
             <HoveredLink href="/committee">اللجان</HoveredLink>
           </div>
-        </MenuItem>
+        </MenuItem> */}
       </Menu>
     </div>
   );

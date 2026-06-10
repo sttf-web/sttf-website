@@ -204,7 +204,7 @@ function LocationPanel({ lang, visible }: { lang: Lang; visible: boolean }) {
 
         <div>
           <a
-            href="#"
+            href="/contact"
             style={{
               display: "inline-block",
               marginTop: 8,

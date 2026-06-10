@@ -376,7 +376,7 @@ function HeroContent({ lang }: { lang: "ar" | "en" }) {
 
       {/* CTA */}
       <a
-        href="#"
+        href="/contact"
         style={{
           display: "inline-flex",
           alignItems: "center",

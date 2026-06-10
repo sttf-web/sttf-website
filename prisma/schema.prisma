@@ -1,0 +1,281 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * Admin users
+ * Used to manage clubs, players, referees, scores, news, etc.
+ */
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+
+  role          UserRole  @default(ADMIN)
+
+  sessions      Session[]
+  accounts      Account[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+/**
+ * Players
+ */
+model Player {
+  id        String         @id @default(cuid())
+
+  name      String
+  age       Int?
+  picture   String?
+  country   String?
+  ranking   Int?
+  number    Int?           @unique
+  division  PlayerDivision
+
+  clubId    String?
+  club      Club?          @relation(fields: [clubId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([clubId])
+  @@index([division])
+  @@index([ranking])
+}
+
+enum PlayerDivision {
+  MEN
+  YOUTH
+  WOMEN
+  PARALYMPIC
+}
+
+/**
+ * Clubs
+ */
+model Club {
+  id              String   @id @default(cuid())
+
+  clubName        String
+  location        String?
+  coach           String?
+  manager         String?
+  phoneNumber     String?
+  logo            String?
+
+  players         Player[]
+
+  homeMatches     Match[]  @relation("ClubOneMatches")
+  awayMatches     Match[]  @relation("ClubTwoMatches")
+
+  leagueStanding  LeagueStanding?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clubName])
+}
+
+/**
+ * Matches
+ * Optimized: instead of storing clubOneName and clubTwoName as plain text,
+ * we connect each match to actual Club records.
+ */
+model Match {
+  id             String      @id @default(cuid())
+
+  clubOneId      String
+  clubOne        Club        @relation("ClubOneMatches", fields: [clubOneId], references: [id], onDelete: Cascade)
+
+  clubTwoId      String
+  clubTwo        Club        @relation("ClubTwoMatches", fields: [clubTwoId], references: [id], onDelete: Cascade)
+
+  clubOneScore   Int         @default(0)
+  clubTwoScore   Int         @default(0)
+
+  date           DateTime
+  status         MatchStatus @default(SCHEDULED)
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([clubOneId])
+  @@index([clubTwoId])
+  @@index([date])
+  @@index([status])
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+/**
+ * League table / standings
+ * This stores the standing of each club in the league.
+ */
+model LeagueStanding {
+  id             String   @id @default(cuid())
+
+  clubId         String   @unique
+  club           Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  matchesPlayed  Int      @default(0)
+  won            Int      @default(0)
+  lost           Int      @default(0)
+
+  /**
+   * Score format example:
+   * "32:22"
+   */
+  score          String   @default("0:0")
+
+  points         Int      @default(0)
+
+  /**
+   * Store last five results as simple values:
+   * ["W", "W", "L", "W", "L"]
+   */
+  form           String[] @default([])
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([points])
+  @@index([won])
+}
+
+/**
+ * Contact messages
+ */
+model Message {
+  id        String   @id @default(cuid())
+
+  name      String
+  title     String
+  email     String
+  message   String
+
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([isRead])
+}
+
+/**
+ * Referees
+ */
+model Referee {
+  id        String   @id @default(cuid())
+
+  name      String
+  picture   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * News
+ */
+model News {
+  id          String   @id @default(cuid())
+
+  title       String
+  slug        String   @unique
+  text        String
+  picture     String?
+  date        DateTime @default(now())
+  tag         NewsTag
+
+  published   Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tag])
+  @@index([date])
+  @@index([published])
+}
+
+enum NewsTag {
+  GENERAL
+  PARTNERSHIPS
+  TRAINING
+  TECH
+  EVENT
+  FEDERATION
+  TOURNAMENT
+  LEAGUE
+  CLUB
+  PLAYER
+  MEDIA
+}
