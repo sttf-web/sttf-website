@@ -28,7 +28,7 @@ const NEWS_ARTICLES: NewsArticle[] = [
     id: 1,
     tag: "NEWS",
     title: {
-      ar: "المملكة تستضيف تصفيات غرب آسيا للشباب والشابات والرجال والسيدات لكرة الطاولة — تستعد مدينة \"الدمام\" شرق المملكة العربية السعودية لاستضافة تصفيات غرب آسيا للشباب والشابات المؤهلة للبطولة الآسيوية للشباب والشابات في أوزبكستان 2025.",
+      ar: "الاجتماع السادس للجمعية العمومية للاتحاد السعودي لكرة الطاولة عقد الاتحاد السعودي لكرة الطاولة الاجتماع السادس للجمعية العمومية يوم 27 مارس 2026، وذلك في الصالات الخضراء بمدينة الرياض، بحضور أعضاء الجمعية العمومية.",
       en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
     },
     image: "/homePage/news-1.png",
@@ -39,7 +39,7 @@ const NEWS_ARTICLES: NewsArticle[] = [
     id: 2,
     tag: "NEWS",
     title: {
-      ar: "المملكة تستضيف تصفيات غرب آسيا للشباب والشابات والرجال والسيدات لكرة الطاولة — تستعد مدينة \"الدمام\" شرق المملكة العربية السعودية لاستضافة تصفيات غرب آسيا للشباب والشابات المؤهلة للبطولة الآسيوية للشباب والشابات في أوزبكستان 2025.",
+      ar: "اختتام منافسات دوري الفئات السنية ودوري الدرجة الأولى لكرة الطاولة اختُتمت منافسات بطولات الفئات السنية ودوري الدرجة الأولى لكرة الطاولة، والتي أُقيمت وسط أجواء تنافسية عالية ومستويات فنية مميزة، عكست تطور اللعبة ونجاح برامج إعداد المواهب في مختلف الفئات.",
       en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
     },
     image: "/homePage/news-2.png",
@@ -50,7 +50,7 @@ const NEWS_ARTICLES: NewsArticle[] = [
     id: 3,
     tag: "NEWS",
     title: {
-      ar: "المملكة تستضيف تصفيات غرب آسيا للشباب والشابات والرجال والسيدات لكرة الطاولة — تستعد مدينة \"الدمام\" شرق المملكة العربية السعودية لاستضافة تصفيات غرب آسيا للشباب والشابات المؤهلة للبطولة الآسيوية للشباب والشابات في أوزبكستان 2025.",
+      ar: "أخضر الطاولة يتألق بدورة الالعاب الخليجية بثلاث ذهبيات وفضية وبرونزيتين واصل المنتخب السعودي لكرة الطاولة تألقه في دورة الألعاب الخليجية، محققاً إنجازاً مميزاً بعد حصد ثلاث ميداليات ذهبية وميدالية فضية وميداليتين برونزيتين، مؤكداً مكانة المملكة الريادية في رياضة كرة الطاولة على المستوى الخليجي.",
       en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
     },
     image: "/homePage/news-3.png",
