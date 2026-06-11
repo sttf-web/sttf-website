@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(
           {
-            error: "Failed to upload player image",
+            error: "Failed to upload player image ",
             details: uploadError.message,
           },
           { status: 500 }
