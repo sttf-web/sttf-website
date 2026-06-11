@@ -11,6 +11,7 @@ const navLinks = [
   { label: "عن الاتحاد", href: "/contact" },
   { label: "المنتخبات", href: "/team" },
   { label: "الأندية", href: "/clubs" },
+  { label: "الأخبار", href: "/news" },
   // { label: "اللوائح", href: "/board" },
   { label: "الدوري", href: "/league" },
   // { label: "اللجان", href: "/committee" },
