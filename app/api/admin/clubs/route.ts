@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const CLUB_LOGOS_BUCKET = process.env.SUPABASE_CLUB_LOGOS_BUCKET || "iamges";
+const CLUB_LOGOS_BUCKET = process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
 
 export async function POST(req: Request) {
   try {

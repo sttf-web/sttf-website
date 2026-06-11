@@ -7,23 +7,22 @@ import { PlayerDivision } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+export const runtime = "nodejs";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const PLAYER_IMAGES_BUCKET =
-  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
+const IMAGES_BUCKET = process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
 
 function toOptionalNumber(value: FormDataEntryValue | null) {
   if (!value) return null;
 
   const stringValue = value.toString().trim();
-
   if (!stringValue) return null;
 
   const numberValue = Number(stringValue);
-
   return Number.isNaN(numberValue) ? null : numberValue;
 }
 
@@ -48,13 +47,10 @@ export async function POST(req: Request) {
     const ranking = toOptionalNumber(formData.get("ranking"));
     const number = toOptionalNumber(formData.get("number"));
 
-    const pictureFile = formData.get("picture") as File | null;
+    const pictureFile = formData.get("picture");
 
     if (!clubId) {
-      return NextResponse.json(
-        { error: "Club is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Club is required" }, { status: 400 });
     }
 
     if (!name) {
@@ -75,12 +71,8 @@ export async function POST(req: Request) {
     }
 
     const club = await prisma.club.findUnique({
-      where: {
-        id: clubId,
-      },
-      select: {
-        id: true,
-      },
+      where: { id: clubId },
+      select: { id: true },
     });
 
     if (!club) {
@@ -92,7 +84,7 @@ export async function POST(req: Request) {
 
     let picturePath: string | null = null;
 
-    if (pictureFile && pictureFile.size > 0) {
+    if (pictureFile instanceof File && pictureFile.size > 0) {
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
       if (!allowedTypes.includes(pictureFile.type)) {
@@ -117,12 +109,11 @@ export async function POST(req: Request) {
       const fileName = `${randomUUID()}.${extension}`;
       const filePath = `players/${fileName}`;
 
-      const bytes = await pictureFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      const arrayBuffer = await pictureFile.arrayBuffer();
 
-      const { error: uploadError } = await supabase.storage
-        .from(PLAYER_IMAGES_BUCKET)
-        .upload(filePath, buffer, {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(IMAGES_BUCKET)
+        .upload(filePath, arrayBuffer, {
           contentType: pictureFile.type,
           cacheControl: "3600",
           upsert: false,
@@ -132,14 +123,17 @@ export async function POST(req: Request) {
         console.error("SUPABASE_PLAYER_UPLOAD_ERROR", uploadError);
 
         return NextResponse.json(
-          { error: "Failed to upload player image" },
+          {
+            error: "Failed to upload player image",
+            details: uploadError.message,
+          },
           { status: 500 }
         );
       }
 
       const { data } = supabase.storage
-        .from(PLAYER_IMAGES_BUCKET)
-        .getPublicUrl(filePath);
+        .from(IMAGES_BUCKET)
+        .getPublicUrl(uploadData.path);
 
       picturePath = data.publicUrl;
     }

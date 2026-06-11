@@ -7,13 +7,14 @@ import { NewsTag } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+export const runtime = "nodejs";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const NEWS_IMAGES_BUCKET =
-  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
+const NEWS_IMAGES_BUCKET = process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
 
 export async function POST(req: Request) {
   try {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     const tag = formData.get("tag")?.toString().trim();
     const dateValue = formData.get("date")?.toString();
     const publishedValue = formData.get("published")?.toString();
-    const pictureFile = formData.get("picture") as File | null;
+    const pictureFile = formData.get("picture");
 
     if (!title) {
       return NextResponse.json(
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
 
     let picturePath: string | null = null;
 
-    if (pictureFile && pictureFile.size > 0) {
+    if (pictureFile instanceof File && pictureFile.size > 0) {
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
       if (!allowedTypes.includes(pictureFile.type)) {
@@ -99,12 +100,11 @@ export async function POST(req: Request) {
       const fileName = `${randomUUID()}.${extension}`;
       const filePath = `news/${fileName}`;
 
-      const bytes = await pictureFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      const arrayBuffer = await pictureFile.arrayBuffer();
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from(NEWS_IMAGES_BUCKET)
-        .upload(filePath, buffer, {
+        .upload(filePath, arrayBuffer, {
           contentType: pictureFile.type,
           cacheControl: "3600",
           upsert: false,
@@ -114,14 +114,17 @@ export async function POST(req: Request) {
         console.error("SUPABASE_NEWS_UPLOAD_ERROR", uploadError);
 
         return NextResponse.json(
-          { error: "Failed to upload news image" },
+          {
+            error: "Failed to upload news image",
+            details: uploadError.message,
+          },
           { status: 500 }
         );
       }
 
       const { data } = supabase.storage
         .from(NEWS_IMAGES_BUCKET)
-        .getPublicUrl(filePath);
+        .getPublicUrl(uploadData.path);
 
       picturePath = data.publicUrl;
     }
