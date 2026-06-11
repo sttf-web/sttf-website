@@ -14,12 +14,12 @@ interface CredibilitySectionProps {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PARTNER_LOGOS = [
-  { src: "/homePage/Logo1.png", alt: { ar: "شريك 1", en: "Partner 1" } },
-  { src: "/homePage/Logo2.png", alt: { ar: "شريك 2", en: "Partner 2" } },
-  { src: "/homePage/Logo3.png", alt: { ar: "شريك 3", en: "Partner 3" } },
-  { src: "/homePage/Logo4.png", alt: { ar: "شريك 4", en: "Partner 4" } },
-  { src: "/homePage/Logo5.png", alt: { ar: "شريك 5", en: "Partner 5" } },
-  { src: "/homePage/Logo6.png", alt: { ar: "شريك 6", en: "Partner 6" } },
+  { src: "/homePage/logo1.png", alt: { ar: "شريك 1", en: "Partner 1" } },
+  { src: "/homePage/logo2.png", alt: { ar: "شريك 2", en: "Partner 2" } },
+  { src: "/homePage/logo3.png", alt: { ar: "شريك 3", en: "Partner 3" } },
+  { src: "/homePage/logo4.png", alt: { ar: "شريك 4", en: "Partner 4" } },
+  { src: "/homePage/logo5.png", alt: { ar: "شريك 5", en: "Partner 5" } },
+  { src: "/homePage/logo6.png", alt: { ar: "شريك 6", en: "Partner 6" } },
 ] as const;
 
 const COPY = {
