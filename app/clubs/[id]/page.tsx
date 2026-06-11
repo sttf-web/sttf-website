@@ -242,7 +242,7 @@ export default function ClubDetailsPage() {
           </div>
         </div>
       </section>
-
+      <div className="bg-[#000000]">
       {/* ══════════════════ COACH / MANAGER ══════════════════ */}
       {(club.coach || club.manager) && (
         <div className="mx-auto max-w-5xl px-6 pt-10">
@@ -311,6 +311,7 @@ export default function ClubDetailsPage() {
           </div>
         )}
       </section>
+      </div>
     </main>
   );
 }
