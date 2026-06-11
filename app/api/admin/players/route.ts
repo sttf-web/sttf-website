@@ -13,7 +13,7 @@ const supabase = createClient(
 );
 
 const PLAYER_IMAGES_BUCKET =
-  process.env.SUPABASE_PLAYER_IMAGES_BUCKET || "player-images";
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
 
 function toOptionalNumber(value: FormDataEntryValue | null) {
   if (!value) return null;

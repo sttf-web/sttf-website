@@ -13,7 +13,7 @@ const supabase = createClient(
 );
 
 const NEWS_IMAGES_BUCKET =
-  process.env.SUPABASE_NEWS_IMAGES_BUCKET || "news-images";
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
 
 export async function POST(req: Request) {
   try {
