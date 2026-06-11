@@ -1,44 +1,19 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
+import { createClient } from "@supabase/supabase-js";
+import { NewsTag } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { NewsTag } from "@prisma/client";
 
-function createSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-async function createUniqueSlug(title: string) {
-  const baseSlug = createSlug(title) || randomUUID();
-
-  let slug = baseSlug;
-  let counter = 1;
-
-  while (true) {
-    const existingNews = await prisma.news.findUnique({
-      where: {
-        slug,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!existingNews) return slug;
-
-    slug = `${baseSlug}-${counter}`;
-    counter++;
-  }
-}
+const NEWS_IMAGES_BUCKET =
+  process.env.SUPABASE_NEWS_IMAGES_BUCKET || "news-images";
 
 export async function POST(req: Request) {
   try {
@@ -47,10 +22,7 @@ export async function POST(req: Request) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await req.formData();
@@ -60,7 +32,6 @@ export async function POST(req: Request) {
     const tag = formData.get("tag")?.toString().trim();
     const dateValue = formData.get("date")?.toString();
     const publishedValue = formData.get("published")?.toString();
-
     const pictureFile = formData.get("picture") as File | null;
 
     if (!title) {
@@ -122,23 +93,37 @@ export async function POST(req: Request) {
         );
       }
 
-      const bytes = await pictureFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
       const extension =
         pictureFile.name.split(".").pop()?.toLowerCase() || "png";
 
       const fileName = `${randomUUID()}.${extension}`;
+      const filePath = `news/${fileName}`;
 
-      const uploadDir = path.join(process.cwd(), "public", "images", "news");
+      const bytes = await pictureFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
 
-      await mkdir(uploadDir, { recursive: true });
+      const { error: uploadError } = await supabase.storage
+        .from(NEWS_IMAGES_BUCKET)
+        .upload(filePath, buffer, {
+          contentType: pictureFile.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      const filePath = path.join(uploadDir, fileName);
+      if (uploadError) {
+        console.error("SUPABASE_NEWS_UPLOAD_ERROR", uploadError);
 
-      await writeFile(filePath, buffer);
+        return NextResponse.json(
+          { error: "Failed to upload news image" },
+          { status: 500 }
+        );
+      }
 
-      picturePath = `/images/news/${fileName}`;
+      const { data } = supabase.storage
+        .from(NEWS_IMAGES_BUCKET)
+        .getPublicUrl(filePath);
+
+      picturePath = data.publicUrl;
     }
 
     const slug = await createUniqueSlug(title);
@@ -169,5 +154,40 @@ export async function POST(req: Request) {
       { error: "Failed to create news" },
       { status: 500 }
     );
+  }
+}
+
+function createSlug(value: string) {
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\u064B-\u065F]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function createUniqueSlug(title: string) {
+  const baseSlug = createSlug(title) || `news-${randomUUID()}`;
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existingNews = await prisma.news.findUnique({
+      where: {
+        slug,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingNews) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
   }
 }

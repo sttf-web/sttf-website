@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
+import { createClient } from "@supabase/supabase-js";
+import { PlayerDivision } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { PlayerDivision } from "@prisma/client";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const PLAYER_IMAGES_BUCKET =
+  process.env.SUPABASE_PLAYER_IMAGES_BUCKET || "player-images";
 
 function toOptionalNumber(value: FormDataEntryValue | null) {
   if (!value) return null;
@@ -27,10 +34,7 @@ export async function POST(req: Request) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await req.formData();
@@ -60,7 +64,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!division || !Object.values(PlayerDivision).includes(division as PlayerDivision)) {
+    if (
+      !division ||
+      !Object.values(PlayerDivision).includes(division as PlayerDivision)
+    ) {
       return NextResponse.json(
         { error: "Valid player division is required" },
         { status: 400 }
@@ -104,21 +111,37 @@ export async function POST(req: Request) {
         );
       }
 
+      const extension =
+        pictureFile.name.split(".").pop()?.toLowerCase() || "png";
+
+      const fileName = `${randomUUID()}.${extension}`;
+      const filePath = `players/${fileName}`;
+
       const bytes = await pictureFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      const extension = pictureFile.name.split(".").pop()?.toLowerCase() || "png";
-      const fileName = `${randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from(PLAYER_IMAGES_BUCKET)
+        .upload(filePath, buffer, {
+          contentType: pictureFile.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      const uploadDir = path.join(process.cwd(), "public", "images", "players");
+      if (uploadError) {
+        console.error("SUPABASE_PLAYER_UPLOAD_ERROR", uploadError);
 
-      await mkdir(uploadDir, { recursive: true });
+        return NextResponse.json(
+          { error: "Failed to upload player image" },
+          { status: 500 }
+        );
+      }
 
-      const filePath = path.join(uploadDir, fileName);
+      const { data } = supabase.storage
+        .from(PLAYER_IMAGES_BUCKET)
+        .getPublicUrl(filePath);
 
-      await writeFile(filePath, buffer);
-
-      picturePath = `/images/players/${fileName}`;
+      picturePath = data.publicUrl;
     }
 
     const player = await prisma.player.create({
