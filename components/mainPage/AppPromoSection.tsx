@@ -3,16 +3,12 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type Lang = "ar" | "en";
 
 interface AppPromoSectionProps {
   lang?: Lang;
   appImageSrc?: string;
 }
-
-// ─── Copy ─────────────────────────────────────────────────────────────────────
 
 const COPY = {
   ar: {
@@ -33,23 +29,37 @@ const COPY = {
   },
 } as const;
 
-// ─── Star background motif ───────────────────────────────────────────────────
-
-function StarMotif() {
+function StarBlock() {
   return (
-    <div aria-hidden="true" className="app-promo-star">
-      <Image
-        src="/homePage/star.png"
-        alt=""
-        fill
-        sizes="(max-width: 768px) 280px, 620px"
-        style={{ objectFit: "contain" }}
+    <div
+      aria-hidden="true"
+      className="
+        relative mb-10 h-[260px] w-full max-w-[520px] overflow-hidden
+        sm:h-[320px]
+        lg:mb-12 lg:h-[380px]
+      "
+    >
+      {/* Star */}
+      <div className="absolute left-1/2 top-0 h-[360px] w-[360px] -translate-x-1/2 sm:h-[430px] sm:w-[430px] lg:h-[370px] lg:w-[370px]">
+        <Image
+          src="/homePage/star.png"
+          alt=""
+          fill
+          sizes="520px"
+          className="object-contain opacity-70"
+        />
+      </div>
+
+      {/* Green bar over the star */}
+      <div
+        className="
+          absolute bottom-0 left-1/2 h-[48%] w-[120%] -translate-x-1/2
+          bg-[#003f2a]/50
+        "
       />
     </div>
   );
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AppPromoSection({
   lang = "ar",
@@ -81,43 +91,35 @@ export default function AppPromoSection({
     <section
       ref={sectionRef}
       dir={isAr ? "rtl" : "ltr"}
-      className="app-promo-section"
+      className="relative overflow-hidden bg-[#050f0a] py-16 text-white sm:py-20 lg:py-[100px]"
       style={{
         fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
       }}
     >
-      {/* Background dots */}
-      <div aria-hidden="true" className="app-promo-dots" />
-
-      {/* Background star motif */}
-      <StarMotif />
-
-      {/* Main grid */}
-      <div className="app-promo-inner">
-        {/* App image */}
+      <div className="relative z-10 mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-10 px-5 md:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12">
+        {/* Image on the right */}
         <div
-          className="app-promo-image-side"
+          className="order-1 flex items-end justify-center"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(40px)",
             transition: "opacity 0.8s ease 0s, transform 0.8s ease 0s",
           }}
         >
-          <div className="app-promo-phone">
+          <div className="relative h-[min(105vw,390px)] w-[min(82vw,300px)] drop-shadow-[0_20px_80px_rgba(0,200,150,0.18)] sm:h-[min(72vw,430px)] sm:w-[min(56vw,340px)] lg:h-[clamp(320px,40vw,580px)] lg:w-[clamp(260px,32vw,460px)]">
             <Image
               src={appImageSrc}
               alt={isAr ? "تطبيق STTF" : "STTF App"}
               fill
-              priority={false}
               sizes="(max-width: 520px) 82vw, (max-width: 900px) 56vw, 460px"
-              style={{ objectFit: "contain" }}
+              className="object-contain"
             />
           </div>
         </div>
 
-        {/* Text content */}
+        {/* Text on the left */}
         <div
-          className="app-promo-copy"
+          className="order-2 flex flex-col items-center text-center lg:items-start lg:text-start"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible
@@ -126,310 +128,27 @@ export default function AppPromoSection({
             transition: "opacity 0.8s ease 0.2s, transform 0.8s ease 0.2s",
           }}
         >
-          {/* Arrow + pre-label + STTF tag */}
-          <div
-            className="app-promo-label-row"
-            style={{
-              flexDirection: isAr ? "row-reverse" : "row",
-              justifyContent: isAr ? "flex-end" : "flex-start",
-            }}
-          >
-            <span className="app-promo-arrow">{isAr ? "←" : "→"}</span>
+          <StarBlock />
 
-            <div className="app-promo-tag">{t.appTag}</div>
+          <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <span className="text-4xl leading-none text-white md:text-5xl">
+              {isAr ? "→" : "→"}
+            </span>
 
-            <span className="app-promo-pre-label">{t.preLabel}</span>
+            <div className="rounded-lg border border-white/15 bg-white/20 px-6 py-1.5 font-sans text-xl font-black tracking-[1px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+              {t.appTag}
+            </div>
+
+            <span className="text-xl font-black text-[#00d984] md:text-2xl">
+              {t.preLabel}
+            </span>
           </div>
 
-          <h2
-            className="app-promo-headline"
-            style={{
-              textAlign: isAr ? "right" : "left",
-            }}
-          >
+          <h2 className="mt-5 max-w-[540px] text-[clamp(24px,7vw,36px)] font-black leading-[1.35] text-white md:text-[clamp(28px,3vw,44px)]">
             {t.headline}
           </h2>
-
-          <p
-            className="app-promo-description"
-            style={{
-              textAlign: isAr ? "right" : "left",
-            }}
-          >
-            {t.description}
-          </p>
-
-          <div
-            className="app-promo-cta-wrap"
-            style={{
-              justifyContent: isAr ? "flex-start" : "flex-end",
-            }}
-          >
-            {/* <a
-              href="#"
-              className="app-promo-cta"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 14px 32px rgba(0,200,150,0.5)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 8px 24px rgba(0,200,150,0.35)";
-              }}
-            >
-              <span>📱</span>
-              <span>{t.cta}</span>
-            </a> */}
-          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .app-promo-section {
-          position: relative;
-          overflow: hidden;
-          background: #050f0a;
-          color: #ffffff;
-          padding: 100px 0;
-        }
-
-        .app-promo-dots {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          pointer-events: none;
-          background-image: radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.04) 1px,
-            transparent 1px
-          );
-          background-size: 28px 28px;
-        }
-
-        .app-promo-star {
-          position: absolute;
-          top: 50%;
-          right: 4%;
-          width: clamp(160px, 32vw, 620px);
-          height: clamp(160px, 32vw, 620px);
-          transform: translateY(-50%);
-          opacity: 0.7;
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .app-promo-inner {
-          position: relative;
-          z-index: 1;
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 48px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          align-items: center;
-          gap: 64px;
-        }
-
-        .app-promo-image-side {
-          display: flex;
-          justify-content: center;
-          align-items: flex-end;
-        }
-
-        .app-promo-phone {
-          position: relative;
-          width: clamp(260px, 32vw, 460px);
-          height: clamp(320px, 40vw, 580px);
-          filter: drop-shadow(0 20px 80px rgba(0, 200, 150, 0.18))
-            drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7));
-        }
-
-        .app-promo-copy {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .app-promo-label-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .app-promo-arrow {
-          font-size: 28px;
-          color: rgba(255, 255, 255, 0.5);
-          line-height: 1;
-        }
-
-        .app-promo-tag {
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 8px;
-          padding: 6px 16px;
-          font-family: "Inter", sans-serif;
-          font-size: 15px;
-          font-weight: 700;
-          letter-spacing: 1px;
-          color: #ffffff;
-        }
-
-        .app-promo-pre-label {
-          font-size: 18px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
-        }
-
-        .app-promo-headline {
-          font-size: clamp(22px, 3vw, 36px);
-          font-weight: 900;
-          line-height: 1.35;
-          color: #ffffff;
-          margin: 0;
-        }
-
-        .app-promo-description {
-          font-size: clamp(14px, 1.4vw, 17px);
-          font-weight: 400;
-          line-height: 1.85;
-          color: rgba(255, 255, 255, 0.6);
-          margin: 0;
-          max-width: 480px;
-        }
-
-        .app-promo-cta-wrap {
-          display: flex;
-        }
-
-        .app-promo-cta {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 13px 30px;
-          border-radius: 50px;
-          background: linear-gradient(135deg, #00c896, #008f6a);
-          color: #ffffff;
-          font-size: 15px;
-          font-weight: 700;
-          text-decoration: none;
-          box-shadow: 0 8px 24px rgba(0, 200, 150, 0.35);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        @media (max-width: 900px) {
-          .app-promo-section {
-            padding: 80px 0;
-          }
-
-          .app-promo-inner {
-            grid-template-columns: 1fr;
-            gap: 42px;
-            padding: 0 28px;
-          }
-
-          .app-promo-image-side {
-            order: 1;
-          }
-
-          .app-promo-copy {
-            order: 2;
-            align-items: center;
-            text-align: center;
-            gap: 20px;
-          }
-
-          .app-promo-label-row {
-            justify-content: center !important;
-            flex-direction: row !important;
-            flex-wrap: wrap;
-          }
-
-          .app-promo-headline,
-          .app-promo-description {
-            text-align: center !important;
-          }
-
-          .app-promo-description {
-            max-width: 640px;
-          }
-
-          .app-promo-cta-wrap {
-            justify-content: center !important;
-          }
-
-          .app-promo-phone {
-            width: min(56vw, 340px);
-            height: min(72vw, 430px);
-          }
-
-          .app-promo-star {
-            top: 24%;
-            right: 50%;
-            width: 360px;
-            height: 360px;
-            transform: translateX(50%);
-            opacity: 0.35;
-          }
-        }
-
-        @media (max-width: 520px) {
-          .app-promo-section {
-            padding: 64px 0;
-          }
-
-          .app-promo-inner {
-            padding: 0 18px;
-            gap: 32px;
-          }
-
-          .app-promo-phone {
-            width: min(82vw, 300px);
-            height: min(105vw, 390px);
-          }
-
-          .app-promo-label-row {
-            gap: 10px;
-          }
-
-          .app-promo-arrow {
-            font-size: 24px;
-          }
-
-          .app-promo-tag {
-            font-size: 13px;
-            padding: 5px 14px;
-          }
-
-          .app-promo-pre-label {
-            font-size: 15px;
-          }
-
-          .app-promo-headline {
-            font-size: clamp(24px, 8vw, 32px);
-          }
-
-          .app-promo-description {
-            font-size: 14px;
-            line-height: 1.8;
-          }
-
-          .app-promo-cta {
-            width: 100%;
-            max-width: 260px;
-            justify-content: center;
-            padding: 13px 22px;
-          }
-
-          .app-promo-star {
-            top: 24%;
-            width: 280px;
-            height: 280px;
-            opacity: 0.28;
-          }
-        }
-      `}</style>
     </section>
   );
 }

@@ -184,10 +184,6 @@ export default function OrgSection({ lang = "ar" }: OrgSectionProps) {
         fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
       }}
     >
-      <div className="org-dots" aria-hidden="true" />
-      <div className="org-glow org-glow-one" aria-hidden="true" />
-      <div className="org-glow org-glow-two" aria-hidden="true" />
-
       <div className="org-inner">
         <div
           className="org-heading-wrap"
@@ -236,7 +232,7 @@ export default function OrgSection({ lang = "ar" }: OrgSectionProps) {
         .org-section {
           position: relative;
           overflow: hidden;
-          background: #050F0A;
+          background: #000000;
           color: #ffffff;
           padding: clamp(72px, 8vw, 120px) 0;
         }

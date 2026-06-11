@@ -119,30 +119,14 @@ function MissionRow({
         cursor: "default",
       }}
     >
-      {/* Text */}
-      <p
-        style={{
-          fontSize: "clamp(14px, 1.5vw, 18px)",
-          fontWeight: 600,
-          color: hovered ? "#ffffff" : "rgba(255,255,255,0.78)",
-          margin: 0,
-          lineHeight: 1.7,
-          textAlign: isAr ? "right" : "left",
-          transition: "color 0.25s ease",
-          flex: 1,
-        }}
-      >
-        {item.text[lang]}
-      </p>
-
-      {/* Icon bubble */}
+            {/* Icon bubble */}
       <div
         style={{
           width: 48,
           height: 48,
           borderRadius: "50%",
-          border: `1.5px solid ${hovered ? "rgba(0,200,150,0.6)" : "rgba(0,200,150,0.25)"}`,
-          background: hovered ? "rgba(0,200,150,0.12)" : "rgba(0,200,150,0.05)",
+          border: "#247B34",
+          background: "#E9F0EB",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -152,6 +136,21 @@ function MissionRow({
       >
         {item.icon}
       </div>
+      {/* Text */}
+      <p
+        style={{
+          fontSize: "clamp(14px, 1.5vw, 18px)",
+          fontWeight: 600,
+          color: "#000000" ,
+          margin: 0,
+          lineHeight: 1.7,
+          textAlign: isAr ? "right" : "left",
+          transition: "color 0.25s ease",
+          flex: 1,
+        }}
+      >
+        {item.text[lang]}
+      </p>
     </div>
   );
 }
@@ -180,62 +179,65 @@ export default function MissionSection({ lang = "ar" }: MissionSectionProps) {
       style={{
         position: "relative",
         overflow: "hidden",
-        background: "#050f0a",
+        background: "#000000",
         padding: "0 clamp(24px, 5vw, 80px) clamp(80px, 10vw, 120px)",
         fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
         color: "#ffffff",
       }}
     >
-      {/* Dot grid */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 900, margin: "0 auto" }}>
 
         {/* ── Section tag ──────────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: isAr ? "flex-start" : "flex-end",
-            gap: 10,
-            marginBottom: 28,
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateX(0)" : `translateX(${isAr ? 20 : -20}px)`,
-            transition: "opacity 0.6s ease 0s, transform 0.6s ease 0s",
-          }}
-        >
-          <div
-            style={{
-              width: 5, height: 36,
-              background: "linear-gradient(to bottom, #00e0aa, #005043)",
-              borderRadius: 3,
-            }}
-          />
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 44px)",
-              fontWeight: 900,
-              margin: 0,
-              letterSpacing: isAr ? 0 : -0.5,
-            }}
-          >
-            {t.sectionTag}
-          </h2>
-        </div>
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: isAr ? "flex-start" : "flex-end",
+    gap: 10,
+    marginBottom: 28,
+    opacity: visible ? 1 : 0,
+    transform: visible
+      ? "translateX(0)"
+      : `translateX(${isAr ? 20 : -20}px)`,
+    transition: "opacity 0.6s ease 0s, transform 0.6s ease 0s",
+  }}
+>
+  <div style={{ position: "relative", display: "inline-block" }}>
+    {/* Green bar behind the text */}
+    <div
+      style={{
+        position: "absolute",
+        right: isAr ? 0 : "auto",
+        left: isAr ? "auto" : 0,
+        top: "58%",
+        width: "42%",
+        height: 14,
+        background: "#54C879",
+        transform: "translateY(-50%)",
+        zIndex: 0,
+      }}
+    />
+
+    <h2
+      style={{
+        position: "relative",
+        zIndex: 1,
+        fontSize: "clamp(28px, 3.5vw, 44px)",
+        fontWeight: 900,
+        margin: 0,
+        letterSpacing: isAr ? 0 : -0.5,
+      }}
+    >
+      {t.sectionTag}
+    </h2>
+  </div>
+</div>
 
         {/* ── Mission card ─────────────────────────────────────────────────── */}
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            borderRadius: 20,
+            background: "rgb(255, 255, 255)",
             overflow: "hidden",
             boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
             opacity: visible ? 1 : 0,

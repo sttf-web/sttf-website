@@ -261,19 +261,6 @@ export default function CredibilitySection({ lang = "ar" }: CredibilitySectionPr
           overflow: "hidden",
         }}
       >
-        {/* Dot grid on dark panel */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            pointerEvents: "none",
-          }}
-        />
-
-
         <div style={{ position: "relative", zIndex: 1, maxWidth: 1280, margin: "0 auto" }}>
           <PartnersStrip lang={lang} visible={visible} />
         </div>

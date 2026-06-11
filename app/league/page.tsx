@@ -9,6 +9,7 @@ import {
   Shield,
   Trophy,
   TrendingUp,
+  ChevronLeft,
 } from "lucide-react";
 
 type LeagueStanding = {
@@ -68,86 +69,75 @@ export default function LeaguePage() {
     <main dir="rtl" className="min-h-screen bg-[#060d09] text-white">
 
       {/* ══ HERO ══ */}
-      <section className="relative overflow-hidden bg-[#04361f] px-5 pb-20 pt-28 text-center text-white">
-        <BackgroundEffects />
-
-        <div className="relative mx-auto max-w-5xl">
-          {/* Trophy badge */}
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[#1fd47a]/30 bg-[#1fd47a]/10 shadow-[0_0_40px_rgba(31,212,122,0.18)]">
-            <Trophy className="h-10 w-10 text-[#1fd47a]" />
-          </div>
-
-          <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-            Jahez Premier Division
-          </h1>
-
-          <p className="mt-3 text-xl font-black text-white/70">
-            موسم 2025/2026
-          </p>
-
-          <p className="mx-auto mt-3 max-w-xl text-sm text-white/40">
-            جدول ترتيب أندية دوري جاهز لكرة الطاولة للمحترفين
-          </p>
-
-          {/* Decorative line */}
-          <div className="mx-auto mt-8 h-px w-24 bg-gradient-to-r from-transparent via-[#1fd47a]/60 to-transparent" />
+      <section className="relative overflow-hidden bg-[#00704C] px-5 pb-16 pt-28">
+        <div className="mx-auto flex max-w-5xl items-center justify-center">
+          <Image
+            src="/league.png"
+            alt="League"
+            width={500}
+            height={320}
+            priority
+            className="h-auto w-full max-w-[500px] object-contain"
+          />
         </div>
       </section>
+{/* ══ BODY ══ */}
+<section className="relative mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
+  {/* Header */}
+  <div className="mb-6 flex items-center justify-center md:relative">
+    <h2 className="text-center text-4xl font-black text-white md:text-5xl">
+      جدول الترتيب
+    </h2>
 
-      {/* ══ BODY ══ */}
-      <section className="relative mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mt-4 flex justify-center md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2">
+      <span className="rounded-md bg-[#22d866] px-12 py-2 text-sm font-black text-[#062314]">
+        2026 \ 2025
+      </span>
+    </div>
+  </div>
 
-        {/* Table card */}
-        <div className="overflow-hidden rounded-[24px] border border-white/8 bg-[#0b1a10]">
+  {/* Loading */}
+  {loading && (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <div className="flex items-center gap-3 text-sm font-medium text-white/50">
+        <Loader2 className="h-5 w-5 animate-spin text-[#1fd47a]" />
+        جاري تحميل جدول الترتيب…
+      </div>
+    </div>
+  )}
 
-          {/* Card header */}
-          <div className="border-b border-white/8 px-6 py-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#1fd47a]">الدوري</p>
-            <h2 className="mt-1.5 text-2xl font-black text-white">جدول الترتيب</h2>
-          </div>
+  {/* Error */}
+  {error && (
+    <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
+      <AlertCircle className="h-4 w-4 shrink-0" />
+      {error}
+    </div>
+  )}
 
-          {/* Loading */}
-          {loading && (
-            <div className="flex min-h-[320px] items-center justify-center">
-              <div className="flex items-center gap-3 text-sm font-medium text-white/40">
-                <Loader2 className="h-5 w-5 animate-spin text-[#1fd47a]" />
-                جاري تحميل جدول الترتيب…
-              </div>
-            </div>
-          )}
+  {/* Empty */}
+  {!loading && !error && standings.length === 0 && (
+    <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 p-10 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+        <Shield className="h-7 w-7 text-white/25" />
+      </div>
 
-          {/* Error */}
-          {error && (
-            <div className="m-5 flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
+      <div>
+        <h3 className="text-xl font-black text-white">لا يوجد ترتيب حالياً</h3>
+        <p className="mt-1 max-w-md text-sm text-white/35">
+          سيتم تحديث جدول الترتيب تلقائياً عند إضافة مباريات منتهية من لوحة التحكم.
+        </p>
+      </div>
+    </div>
+  )}
 
-          {/* Empty */}
-          {!loading && !error && standings.length === 0 && (
-            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-10 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                <Shield className="h-7 w-7 text-white/25" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-white">لا يوجد ترتيب حالياً</h3>
-                <p className="mt-1 max-w-md text-sm text-white/35">
-                  سيتم تحديث جدول الترتيب تلقائياً عند إضافة مباريات منتهية من لوحة التحكم.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Tables */}
-          {!loading && !error && standings.length > 0 && (
-            <>
-              <DesktopLeagueTable standings={standings} />
-              <MobileLeagueCards standings={standings} />
-            </>
-          )}
-        </div>
-      </section>
+  {/* Tables */}
+  {!loading && !error && standings.length > 0 && (
+    <>
+      <DesktopLeagueTable standings={standings} />
+      <MobileLeagueCards standings={standings} />
+    </>
+  )}
+</section>
     </main>
   );
 }
@@ -155,21 +145,22 @@ export default function LeaguePage() {
 /* ══ DESKTOP TABLE ══ */
 function DesktopLeagueTable({ standings }: { standings: LeagueStanding[] }) {
   return (
-    <div className="hidden p-5 md:block">
+    <div className="hidden md:block">
       {/* Header row */}
-      <div className="grid grid-cols-[64px_1.8fr_repeat(5,1fr)_1.4fr] items-center rounded-xl bg-[#1fd47a]/10 px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-[#1fd47a]">
-        <div>#</div>
-        <div>النادي</div>
+      <div className="grid grid-cols-[1fr_1.3fr_repeat(5,1fr)_1.3fr_44px] items-center rounded-xl bg-[#07944f] px-6 py-5 text-sm font-black text-white">
+        <div className="text-center">المستوى</div>
+        <div className="text-center">النادي</div>
         <div className="text-center">لعب</div>
         <div className="text-center">فوز</div>
         <div className="text-center">خسارة</div>
         <div className="text-center">+/-</div>
         <div className="text-center">النقاط</div>
         <div className="text-center">الشكل</div>
+        <div />
       </div>
 
       {/* Rows */}
-      <div className="mt-2 space-y-1.5">
+      <div className="mt-8 space-y-6">
         {standings.map((standing, i) => (
           <LeagueRow key={standing.id} standing={standing} index={i} />
         ))}
@@ -179,66 +170,69 @@ function DesktopLeagueTable({ standings }: { standings: LeagueStanding[] }) {
 }
 
 /* ══ LEAGUE ROW ══ */
-function LeagueRow({ standing, index }: { standing: LeagueStanding; index: number }) {
-  const isTopThree = standing.position <= 3;
+function LeagueRow({
+  standing,
+  index,
+}: {
+  standing: LeagueStanding;
+  index: number;
+}) {
+  const isTopFour = standing.position <= 4;
 
   return (
     <Link
       href={`/clubs/${standing.clubId}`}
-      className={`grid grid-cols-[64px_1.8fr_repeat(5,1fr)_1.4fr] items-center rounded-xl border px-5 py-4 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${
-        isTopThree
-          ? "border-[#1fd47a]/25 bg-[#1fd47a]/8 hover:bg-[#1fd47a]/12"
-          : "border-white/6 bg-white/4 hover:border-white/12 hover:bg-white/7"
+      className={`grid min-h-[72px] grid-cols-[1fr_1.3fr_repeat(5,1fr)_1.3fr_44px] items-center rounded-xl border px-6 py-4 text-sm transition duration-200 hover:-translate-y-0.5 ${
+        isTopFour
+          ? "border-[#18d96d] bg-[#003818] text-white"
+          : "border-[#18d96d] bg-[#e9edf0] text-[#092419]"
       }`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       {/* Position */}
-      <div className="flex items-center gap-2">
-        {isTopThree ? (
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1fd47a] text-xs font-black text-[#060d09] shadow-[0_0_10px_rgba(31,212,122,0.4)]">
-            {standing.position}
-          </span>
-        ) : (
-          <span className="text-base font-black text-white/50">{standing.position}</span>
-        )}
+      <div className="text-center text-2xl font-black">
+        {standing.position}
       </div>
 
       {/* Club */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1.5">
+      <div className="flex items-center justify-center">
+        <div className="flex h-11 w-11 items-center justify-center">
           {standing.clubLogo ? (
             <Image
               src={standing.clubLogo}
               alt={standing.clubName}
-              width={34}
-              height={34}
+              width={44}
+              height={44}
               className="h-full w-full object-contain"
             />
           ) : (
-            <Shield className="h-5 w-5 text-[#1fd47a]/50" />
-          )}
-        </div>
-        <div>
-          <p className="font-bold text-white">{standing.clubName}</p>
-          {standing.clubLocation && (
-            <p className="mt-0.5 text-xs text-white/30">{standing.clubLocation}</p>
+            <Shield
+              className={`h-7 w-7 ${
+                isTopFour ? "text-white/60" : "text-[#07944f]"
+              }`}
+            />
           )}
         </div>
       </div>
 
-      <TableNumber value={standing.matchesPlayed} />
-      <TableNumber value={standing.won} className="text-[#1fd47a]" />
-      <TableNumber value={standing.lost} className="text-red-400" />
-      <TableNumber value={standing.score} className="text-white/60" />
-
-      {/* Points */}
-      <div className="text-center">
-        <span className="text-base font-black text-[#1fd47a]">{standing.points}</span>
-      </div>
+      <TableNumber value={standing.matchesPlayed} isDark={isTopFour} />
+      <TableNumber value={standing.won} isDark={isTopFour} />
+      <TableNumber value={standing.lost} isDark={isTopFour} />
+      <TableNumber value={standing.score} isDark={isTopFour} />
+      <TableNumber value={standing.points} isDark={isTopFour} />
 
       {/* Form */}
       <div className="flex items-center justify-center gap-1">
         <FormDots form={standing.form} />
+      </div>
+
+      {/* Arrow */}
+      <div className="flex justify-end">
+        <ChevronLeft
+          className={`h-6 w-6 ${
+            isTopFour ? "text-[#18d96d]" : "text-[#092419]"
+          }`}
+        />
       </div>
     </Link>
   );
@@ -246,89 +240,97 @@ function LeagueRow({ standing, index }: { standing: LeagueStanding; index: numbe
 
 function TableNumber({
   value,
-  className = "text-white/70",
+  isDark,
 }: {
   value: number | string;
-  className?: string;
+  isDark: boolean;
 }) {
   return (
-    <div className={`text-center text-sm font-bold ${className}`}>{value}</div>
+    <div
+      className={`text-center text-sm font-black ${
+        isDark ? "text-white" : "text-[#20c56c]"
+      }`}
+    >
+      {value}
+    </div>
   );
 }
 
 /* ══ MOBILE CARDS ══ */
 function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
   return (
-    <div className="space-y-3 p-4 md:hidden">
+    <div className="space-y-4 md:hidden">
       {standings.map((standing) => {
-        const isTopThree = standing.position <= 3;
+        const isTopFour = standing.position <= 4;
+
         return (
           <Link
             key={standing.id}
             href={`/clubs/${standing.clubId}`}
-            className={`block rounded-2xl border p-4 transition hover:-translate-y-0.5 ${
-              isTopThree
-                ? "border-[#1fd47a]/25 bg-[#1fd47a]/8"
-                : "border-white/8 bg-white/4 hover:border-white/12"
+            className={`block rounded-xl border p-4 transition hover:-translate-y-0.5 ${
+              isTopFour
+                ? "border-[#18d96d] bg-[#003818] text-white"
+                : "border-[#18d96d] bg-[#e9edf0] text-[#092419]"
             }`}
           >
             <div className="mb-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                {/* Position */}
-                {isTopThree ? (
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1fd47a] text-sm font-black text-[#060d09] shadow-[0_0_10px_rgba(31,212,122,0.35)]">
-                    {standing.position}
-                  </span>
-                ) : (
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm font-black text-white/40">
-                    {standing.position}
-                  </span>
-                )}
+                <span className="text-2xl font-black">
+                  {standing.position}
+                </span>
 
-                {/* Logo */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center">
                   {standing.clubLogo ? (
                     <Image
                       src={standing.clubLogo}
                       alt={standing.clubName}
-                      width={36}
-                      height={36}
+                      width={44}
+                      height={44}
                       className="h-full w-full object-contain"
                     />
                   ) : (
-                    <Shield className="h-5 w-5 text-[#1fd47a]/50" />
+                    <Shield
+                      className={`h-7 w-7 ${
+                        isTopFour ? "text-white/60" : "text-[#07944f]"
+                      }`}
+                    />
                   )}
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-white">{standing.clubName}</h3>
+                  <h3 className="font-black">{standing.clubName}</h3>
                   {standing.clubLocation && (
-                    <p className="mt-0.5 text-xs text-white/30">{standing.clubLocation}</p>
+                    <p
+                      className={`mt-0.5 text-xs ${
+                        isTopFour ? "text-white/50" : "text-black/50"
+                      }`}
+                    >
+                      {standing.clubLocation}
+                    </p>
                   )}
                 </div>
               </div>
 
-              {/* Points */}
-              <div className="text-left">
-                <p className="text-2xl font-black text-[#1fd47a]">{standing.points}</p>
-                <p className="text-xs text-white/30">نقطة</p>
-              </div>
+              <ChevronLeft
+                className={`h-6 w-6 ${
+                  isTopFour ? "text-[#18d96d]" : "text-[#092419]"
+                }`}
+              />
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-4 gap-2 border-t border-white/8 pt-4 text-center">
+            <div
+              className={`grid grid-cols-5 gap-2 border-t pt-4 text-center ${
+                isTopFour ? "border-white/10" : "border-black/10"
+              }`}
+            >
               <MobileStat label="لعب" value={standing.matchesPlayed} />
-              <MobileStat label="فوز" value={standing.won} green />
-              <MobileStat label="خسارة" value={standing.lost} red />
+              <MobileStat label="فوز" value={standing.won} />
+              <MobileStat label="خسارة" value={standing.lost} />
               <MobileStat label="+/-" value={standing.score} />
+              <MobileStat label="النقاط" value={standing.points} />
             </div>
 
-            {/* Form row */}
-            <div className="mt-3 flex items-center justify-between rounded-xl border border-white/6 bg-white/4 px-4 py-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#1fd47a]">
-                <TrendingUp className="h-3.5 w-3.5" />
-                الشكل
-              </div>
+            <div className="mt-4 flex items-center justify-center gap-1">
               <FormDots form={standing.form} />
             </div>
           </Link>
@@ -342,29 +344,22 @@ function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
 function MobileStat({
   label,
   value,
-  green,
-  red,
 }: {
   label: string;
   value: number | string;
-  green?: boolean;
-  red?: boolean;
 }) {
   return (
     <div>
-      <p className={`text-lg font-black ${green ? "text-[#1fd47a]" : red ? "text-red-400" : "text-white/70"}`}>
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-white/30">{label}</p>
+      <p className="text-base font-black">{value}</p>
+      <p className="mt-1 text-[11px] opacity-60">{label}</p>
     </div>
   );
 }
 
 /* ══ FORM DOTS ══ */
 function FormDots({ form }: { form: string[] }) {
-  // Always render exactly 5 dots (W/L), padding with placeholders when missing
-  const safeForm = form.length > 0 ? form.slice(0, 5) : [];
-  const padded = Array.from({ length: 5 }, (_, i) => safeForm[i] ?? "-");
+  const safeForm = form.length > 0 ? form.slice(0, 3) : [];
+  const padded = Array.from({ length: 3 }, (_, i) => safeForm[i] ?? "-");
 
   if (padded.every((x) => x === "-")) {
     return <span className="text-xs text-white/25">—</span>;
@@ -379,12 +374,12 @@ function FormDots({ form }: { form: string[] }) {
         return (
           <span
             key={`${item}-${index}`}
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
+            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ${
               isWin
-                ? "bg-[#1fd47a]/20 text-[#1fd47a] ring-1 ring-[#1fd47a]/40"
+                ? "bg-[#07944f]"
                 : isLoss
-                  ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/30"
-                  : "bg-white/5 text-white/15 ring-1 ring-white/10"
+                  ? "bg-[#f0444d]"
+                  : "bg-white/20"
             }`}
           >
             {isWin ? "W" : isLoss ? "L" : ""}
@@ -395,21 +390,3 @@ function FormDots({ form }: { form: string[] }) {
   );
 }
 
-/* ══ BACKGROUND ══ */
-function BackgroundEffects() {
-  return (
-    <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "26px 26px",
-        }}
-      />
-      <div aria-hidden className="pointer-events-none absolute -right-32 top-10 h-80 w-80 rounded-full bg-[#1fd47a]/8 blur-[100px]" />
-      <div aria-hidden className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-[#0a5c35]/50 blur-[120px]" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#060d09] to-transparent" />
-    </>
-  );
-}

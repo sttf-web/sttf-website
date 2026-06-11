@@ -47,7 +47,7 @@ export default function VisionSection({ lang = "ar" }: VisionSectionProps) {
       style={{
         position: "relative",
         overflow: "hidden",
-        background: "#050f0a",
+        background: "#000000",
         padding: "clamp(64px, 10vw, 100px) clamp(24px, 5vw, 80px)",
         fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
         color: "#ffffff",
@@ -66,44 +66,37 @@ export default function VisionSection({ lang = "ar" }: VisionSectionProps) {
       <div style={{ position: "relative", zIndex: 1, maxWidth: 900, margin: "0 auto" }}>
 
         {/* ── Section tag ──────────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: isAr ? "flex-start" : "flex-end",
-            gap: 10,
-            marginBottom: 32,
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateX(0)" : `translateX(${isAr ? 20 : -20}px)`,
-            transition: "opacity 0.6s ease 0s, transform 0.6s ease 0s",
-          }}
-        >
-          {/* Green accent bar */}
-          <div
-            style={{
-              width: 5, height: 36,
-              background: "linear-gradient(to bottom, #00e0aa, #005043)",
-              borderRadius: 3,
-            }}
-          />
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 44px)",
-              fontWeight: 900,
-              margin: 0,
-              letterSpacing: isAr ? 0 : -0.5,
-            }}
-          >
-            {t.sectionTag}
-          </h2>
-        </div>
+<div className="relative inline-block">
+  {/* Green bar behind the last part of the text */}
+  <div
+    className="
+      absolute right-0 top-1/2 z-0
+      h-[14px] w-[42%]
+      -translate-y-1/2
+      bg-[#45c878]
+    "
+  />
+
+  <h2
+    className="
+      relative z-10 m-0
+      text-[clamp(32px,4vw,56px)]
+      font-black leading-tight
+      text-white
+    "
+    style={{
+      letterSpacing: isAr ? 0 : -0.5,
+    }}
+  >
+    {t.sectionTag}
+  </h2>
+</div>
 
         {/* ── Vision card ──────────────────────────────────────────────────── */}
         <div
           style={{
-            background: "linear-gradient(135deg, #003d30 0%, #005043 100%)",
+            background: "#00704C",
             border: "1px solid rgba(0,200,150,0.2)",
-            borderRadius: 20,
             padding: "clamp(28px, 4vw, 48px) clamp(24px, 4vw, 48px)",
             boxShadow: "0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
             opacity: visible ? 1 : 0,
@@ -113,17 +106,6 @@ export default function VisionSection({ lang = "ar" }: VisionSectionProps) {
             overflow: "hidden",
           }}
         >
-          {/* Corner glow */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: -60, right: isAr ? "auto" : -60, left: isAr ? -60 : "auto",
-              width: 200, height: 200, borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(0,200,150,0.15) 0%, transparent 70%)",
-              pointerEvents: "none",
-            }}
-          />
 
           <p
             style={{

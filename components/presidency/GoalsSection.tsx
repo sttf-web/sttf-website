@@ -137,12 +137,6 @@ export default function GoalsSection({ lang = "ar" }: GoalsSectionProps) {
         fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
       }}
     >
-      {/* Background dots */}
-      <div className="goals-dots" aria-hidden="true" />
-
-      {/* Soft glow */}
-      <div className="goals-glow goals-glow-one" aria-hidden="true" />
-      <div className="goals-glow goals-glow-two" aria-hidden="true" />
 
       <div className="goals-inner">
         {/* Heading */}
@@ -178,7 +172,7 @@ export default function GoalsSection({ lang = "ar" }: GoalsSectionProps) {
         .goals-section {
           position: relative;
           overflow: hidden;
-          background: #050F0A;
+          background: #000000;
           color: #ffffff;
           padding: clamp(70px, 8vw, 120px) 0;
         }
@@ -199,7 +193,7 @@ export default function GoalsSection({ lang = "ar" }: GoalsSectionProps) {
         .goals-glow {
           position: absolute;
           z-index: 0;
-          border-radius: 999px;
+          border-radius: 20px;
           pointer-events: none;
           filter: blur(70px);
         }

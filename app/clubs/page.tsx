@@ -77,42 +77,45 @@ export default function ClubsPage() {
   }, []);
 
   return (
-    <main
-      dir="rtl"
-      className="relative min-h-screen overflow-hidden bg-black text-white"
-    >
-      <BackgroundEffects />
+    <main dir="rtl" className="min-h-screen bg-black text-white">
+      <section className="bg-[#003f29] mt-10 px-5 pb-10 pt-24 text-center">
+        <div className="mx-auto flex max-w-5xl flex-col items-center">
+          <div className="relative mb-9 inline-flex items-center justify-center gap-3">
+            <h1 className="relative z-10 text-4xl font-black leading-none md:text-5xl">
+              الأندية
+            </h1>
 
-      <section className="relative overflow-hidden bg-[#043F2A] px-6 pb-12 pt-20 text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(0,0,0,0.35),transparent_40%)]" />
-
-        <div className="relative mt-20 mx-auto max-w-5xl">
-          <div className="mb-5 flex items-center justify-center gap-3">
-            <h1 className="text-4xl font-black md:text-6xl">الأندية</h1>
-            <Building2 className="h-10 w-10 text-white/90 md:h-12 md:w-12" />
+            <div className="relative h-12 w-12">
+              <Building2 className="absolute inset-0 h-12 w-12 text-white" />
+              <span className="absolute bottom-1 right-0 h-3 w-8 bg-[#5ed487]" />
+            </div>
           </div>
 
-          <p className="mx-auto max-w-2xl text-sm leading-7 text-white/75 md:text-base">
-            أندية دوري كرة الطاولة في المملكة العربية السعودية
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-10">
+            <button className="rounded-md border border-white/40 bg-white/20 px-8 py-2 text-sm font-bold text-white shadow-sm">
+              دوري الممتاز
+            </button>
+
+            <button className="rounded-md border border-white/40 bg-white/20 px-8 py-2 text-sm font-bold text-white shadow-sm">
+              دوري الدرجة الأولى
+            </button>
+
+            <button className="rounded-md border border-white/40 bg-white/20 px-8 py-2 text-sm font-bold text-white shadow-sm">
+              دوري السيدات
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
-        <div className="mb-8 flex items-center justify-between gap-5">
-          <div>
-            <p className="text-sm font-bold text-[#20E58C]">
-              الأندية المشاركة
-            </p>
-
-            <h2 className="mt-2 text-2xl font-black md:text-4xl">
-              أندية دوري جاهز لكرة الطاولة
-            </h2>
-          </div>
+      <section className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
+        <div className="mb-10 text-right">
+          <h2 className="text-base font-medium text-white md:text-lg">
+            أندية دوري جاهز لكرة الطاولة
+          </h2>
         </div>
 
         {loading ? (
-          <div className="flex min-h-[260px] items-center justify-center rounded-[2rem] border border-white/10 bg-white/5">
+          <div className="flex min-h-[240px] items-center justify-center">
             <div className="flex items-center gap-3 text-sm font-bold text-white/70">
               <Loader2 className="h-5 w-5 animate-spin text-[#20E58C]" />
               جاري تحميل الأندية...
@@ -121,14 +124,14 @@ export default function ClubsPage() {
         ) : null}
 
         {error ? (
-          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">
             <AlertCircle className="h-5 w-5" />
             {error}
           </div>
         ) : null}
 
         {!loading && !error && clubs.length === 0 ? (
-          <div className="rounded-[2rem] border border-dashed border-white/15 bg-white/5 p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center">
             <p className="text-sm font-semibold text-white/60">
               لا توجد أندية متاحة حالياً.
             </p>
@@ -136,7 +139,7 @@ export default function ClubsPage() {
         ) : null}
 
         {!loading && !error && clubs.length > 0 ? (
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-14 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((club) => (
               <ClubCard key={club.id} club={club} />
             ))}
@@ -151,82 +154,39 @@ function ClubCard({ club }: { club: Club }) {
   return (
     <Link
       href={club.href}
-      className="group relative overflow-hidden rounded-[1.75rem] border border-[#20E58C]/45 bg-[#06140E]/95 p-5 shadow-2xl shadow-black/30 transition hover:-translate-y-1 hover:border-[#20E58C] hover:bg-[#082016]"
+      className="group relative min-h-[185px] overflow-hidden rounded-[18px] border border-[#00d46f] bg-[#020d08] px-8 pb-5 pt-8 transition duration-300 hover:-translate-y-1 hover:border-[#44ff9b] hover:bg-[#04140d]"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(32,229,140,0.18),transparent_42%)] opacity-60 transition group-hover:opacity-100" />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
-      <div className="relative flex flex-col items-center text-center">
-        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5 p-3 ring-1 ring-white/10 transition group-hover:scale-105 group-hover:bg-white/10">
+      <div className="relative flex h-full flex-col items-center text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center">
           <Image
             src={club.logo}
             alt={club.name}
-            width={72}
-            height={72}
-            className="h-full w-full object-contain"
+            width={70}
+            height={70}
+            className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
           />
         </div>
 
-        <h3 className="text-lg font-black text-white">{club.name}</h3>
+        <h3 className="text-base font-black text-white">{club.name}</h3>
 
-        <span className="mt-3 rounded-md bg-[#D8FFF0] px-5 py-1 text-xs font-black text-[#043F2A]">
+        <span className="mt-3 min-w-[112px] rounded-md bg-[#d8fff3] px-5 py-1 text-sm font-black leading-none text-[#003f29]">
           {club.city}
         </span>
 
-        <div className="mt-6 flex w-full items-center justify-between gap-4 border-t border-white/10 pt-4 text-xs text-white/75">
+        <div className="mt-5 flex w-full items-center justify-between text-sm text-white">
           <div className="flex items-center gap-2">
-            <UsersRound className="h-4 w-4 text-[#20E58C]" />
+            <UsersRound className="h-4 w-4 text-white/80" />
             <span>اللاعبين</span>
           </div>
 
-          <span className="font-black text-white">{club.playersCount}</span>
+          <span className="font-medium">{club.playersCount}</span>
         </div>
 
-        <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#20E58C]">
+        <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white">
           عرض التفاصيل
           <ChevronLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
         </div>
       </div>
     </Link>
-  );
-}
-
-function BackgroundEffects() {
-  return (
-    <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-40 top-40 h-96 w-96 rounded-full bg-[#18B56F]/20 blur-[110px]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-40 top-[35rem] h-[30rem] w-[30rem] rounded-full bg-[#057A4B]/25 blur-[130px]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-white/5 blur-[100px]"
-      />
-    </>
   );
 }

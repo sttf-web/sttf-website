@@ -193,8 +193,6 @@ export default function TeamsPage() {
 
   return (
     <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black text-white">
-      <BackgroundEffects />
-
       {!selectedTeam ? (
         <TeamSelectView onSelectTeam={setSelectedTeamKey} />
       ) : (
@@ -220,12 +218,7 @@ function TeamSelectView({
       />
 
       <section className="relative mx-auto max-w-3xl px-5 py-12 md:py-16">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-semibold text-[#20E58C]">اختر المنتخب</p>
-          <h2 className="mt-2 text-2xl font-black md:text-4xl">
-            تعرف على أبطالنا
-          </h2>
-        </div>
+
 
         <div className="space-y-6">
           {TEAMS.map((team) => (
@@ -238,20 +231,16 @@ function TeamSelectView({
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(32,229,140,0.14),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
 
               <div className="relative rounded-b-[1.5rem] bg-[#057A4B] px-6 py-7 text-center">
-                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white">
-                  <Trophy className="h-5 w-5" />
-                </div>
+                <h3 className="text-3xl font-black text-white">{team.title}</h3>
 
-                <h3 className="text-xl font-black text-white">{team.title}</h3>
-
-                <div className="mt-2 flex items-center justify-center gap-2 text-xs text-white/75">
+                <div className="mt-2 flex items-center justify-center gap-2 text-lg text-white/75">
                   <UserRound className="h-3.5 w-3.5" />
                   <span>المدرب: {team.coach}</span>
                 </div>
               </div>
 
               <div className="relative px-6 py-6 text-center">
-                <p className="text-sm leading-7 text-white/75">
+                <p className="text-3xl leading-7 text-white/75">
                   {team.description}
                 </p>
 
@@ -277,17 +266,17 @@ function TeamPlayersView({
 }) {
   return (
     <>
-      <section className="relative overflow-hidden bg-[#043F2A] px-5 py-9">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(0,0,0,0.35),transparent_40%)]" />
+      <section className="relative overflow-hidden bg-[#01311F] px-5 py-9 mt-10">
+        <div className="absolute inset-0 " />
 
         <div className="relative mt-20 mx-auto flex max-w-6xl items-center justify-center gap-5">
           <button
             type="button"
             onClick={onBack}
             aria-label="Back to teams"
-            className="absolute left-0 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white hover:text-[#043F2A]"
+            className="absolute left-0 flex h-11 w-11 items-center justify-center "
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-25 w-25" />
           </button>
 
           <div className="flex-1 text-center">
@@ -303,7 +292,6 @@ function TeamPlayersView({
 
       <section className="relative mx-auto max-w-6xl px-5 py-12 md:py-16">
         <div className="mb-10 text-center">
-          <p className="text-sm font-bold text-[#20E58C]">قائمة المنتخب</p>
           <h2 className="mt-2 text-3xl font-black md:text-5xl">
             أبرز اللاعبين
           </h2>
@@ -321,44 +309,48 @@ function TeamPlayersView({
 
 function PlayerCard({ player }: { player: Player }) {
   return (
-    <article className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#050505]/80 shadow-2xl shadow-black/40 transition hover:-translate-y-1 hover:border-[#20E58C]/60">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(32,229,140,0.16),transparent_45%)] opacity-70" />
-
-      <div className="relative flex h-[310px] items-end justify-center px-5 pt-6">
+    <article className="group relative w-full overflow-hidden bg-black">
+      {/* Image area */}
+      <div className="relative flex h-[320px] items-end justify-center overflow-hidden px-4 pt-6">
+        {/* Star behind player */}
         <Image
           src="/homePage/star.png"
           alt=""
-          width={260}
-          height={260}
+          width={280}
+          height={280}
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-10 z-0 h-86 w-86 -translate-x-1/2 object-contain opacity-50 transition duration-500 group-hover:scale-110 group-hover:opacity-30"
+          className="pointer-events-none absolute left-1/2 top-6 z-0 h-[250px] w-[250px] -translate-x-1/2 object-contain opacity-55 transition duration-500 group-hover:scale-105"
         />
 
+        {/* Player */}
         <Image
           src={player.image}
           alt={player.name}
-          width={340}
-          height={360}
-          className="relative z-10 max-h-[290px] w-auto object-contain drop-shadow-2xl transition duration-500 group-hover:scale-105"
+          width={360}
+          height={380}
+          className="relative z-10 max-h-[300px] w-auto object-contain drop-shadow-2xl transition duration-500 group-hover:scale-[1.03]"
         />
       </div>
 
-      <div className="relative border-t border-white/20 bg-black/60 px-5 py-4 backdrop-blur">
-        <div className="mb-2 h-[2px] w-full bg-white" />
+      {/* Info area */}
+      <div className="relative px-3 pb-5">
+        {/* Top mint line */}
+        <div className="mb-2 h-[4px] w-full bg-[#CFFEF2]" />
 
-        <div className="flex items-end justify-between gap-4">
-          <div className="text-right">
-            <p className="text-[11px] text-white/50">رقم اللاعب</p>
-            <p className="text-xl font-black leading-none text-white">
-              {player.number}
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-4 px-3">
+          {/* Number - left */}
+          <p className="text-left text-xl font-black leading-none text-white">
+            {player.number}
+          </p>
 
-          <div className="text-left">
-            <p className="text-[11px] text-white/50">اللاعب</p>
-            <h3 className="text-base font-black text-white">{player.name}</h3>
-          </div>
+          {/* Name - right */}
+          <h3 className="max-w-[55%] text-right text-lg font-medium leading-tight text-white">
+            {player.name}
+          </h3>
         </div>
+
+        {/* Bottom mint line */}
+        <div className="mt-3 h-[4px] w-full bg-[#CFFEF2]" />
       </div>
     </article>
   );
@@ -366,8 +358,8 @@ function PlayerCard({ player }: { player: Player }) {
 
 function PageHero({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <section className="relative overflow-hidden bg-[#043F2A] px-6 py-16 text-center">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(0,0,0,0.35),transparent_40%)]" />
+    <section className="relative overflow-hidden bg-[#01311F] px-6 py-16 text-center">
+      <div className="absolute inset-0 " />
 
       <div className="relative mt-20 mx-auto max-w-4xl">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white/10">
@@ -381,36 +373,5 @@ function PageHero({ title, subtitle }: { title: string; subtitle: string }) {
         </p>
       </div>
     </section>
-  );
-}
-
-function BackgroundEffects() {
-  return (
-    <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-40 top-40 h-96 w-96 rounded-full bg-[#18B56F]/20 blur-[110px]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-40 top-[35rem] h-[30rem] w-[30rem] rounded-full bg-[#057A4B]/25 blur-[130px]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-white/5 blur-[100px]"
-      />
-    </>
   );
 }

@@ -16,6 +16,7 @@ import {
   Star,
   BadgeCheck,
   Shield,
+  ArrowLeft,
 } from "lucide-react";
 
 type MatchStatus = "SCHEDULED" | "LIVE" | "FINISHED" | "POSTPONED" | "CANCELLED";
@@ -162,28 +163,19 @@ export default function ClubDetailsPage() {
     <main dir="rtl" className="min-h-screen bg-[#050A07] text-white">
 
       {/* ══════════════════ HERO ══════════════════ */}
-      <section className="relative overflow-hidden bg-[#046b42] pb-28 pt-10 text-white">
-        {/* Dot texture */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.22) 1.5px, transparent 1.5px)",
-            backgroundSize: "22px 22px",
-          }}
-        />
-        {/* Dark vignette at bottom */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#022e1c]/90 to-transparent" />
+      <section className="relative overflow-hidden bg-[#01311F] pb-28 pt-10 text-white">
+
+
 
         {/* Back button — top right */}
-        <div className="relative mx-auto max-w-6xl px-6">
+        <div className="relative mx-auto mt-20 max-w-6xl px-6">
           <div className="flex justify-end">
             <Link
               href="/clubs"
               className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
               الأندية
-              <ArrowRight className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>
         </div>
