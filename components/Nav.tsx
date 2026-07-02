@@ -12,7 +12,7 @@ const navLinks = [
   { label: "المنتخبات", href: "/team" },
   { label: "الأندية", href: "/clubs" },
   { label: "الأخبار", href: "/news" },
-  // { label: "اللوائح", href: "/board" },
+  // { label: "اللوائح", href: "/board" }, 
   { label: "الدوري", href: "/league" },
   // { label: "اللجان", href: "/committee" },
   { label: "المباريات", href: "/matches" },
