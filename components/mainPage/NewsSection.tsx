@@ -2,71 +2,53 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type Lang = "ar" | "en";
+
 interface NewsArticle {
-  id: number;
+  id: string;
   tag: string;
-  title: {
-    ar: string;
-    en: string;
-  };
+  title: string;
   image: string;
   date: string;
   href: string;
 }
 
+interface LatestNewsResponse {
+  articles: NewsArticle[];
+}
+
 interface NewsSectionProps {
-  lang?: "ar" | "en";
+  lang?: Lang;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const NEWS_ARTICLES: NewsArticle[] = [
-  {
-    id: 1,
-    tag: "NEWS",
-    title: {
-      ar: "الاجتماع السادس للجمعية العمومية للاتحاد السعودي لكرة الطاولة عقد الاتحاد السعودي لكرة الطاولة الاجتماع السادس للجمعية العمومية يوم 27 مارس 2026، وذلك في الصالات الخضراء بمدينة الرياض، بحضور أعضاء الجمعية العمومية.",
-      en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
-    },
-    image: "/homePage/news-1.png",
-    date: "2025-05-20",
-    href: "#",
-  },
-  {
-    id: 2,
-    tag: "NEWS",
-    title: {
-      ar: "اختتام منافسات دوري الفئات السنية ودوري الدرجة الأولى لكرة الطاولة اختُتمت منافسات بطولات الفئات السنية ودوري الدرجة الأولى لكرة الطاولة، والتي أُقيمت وسط أجواء تنافسية عالية ومستويات فنية مميزة، عكست تطور اللعبة ونجاح برامج إعداد المواهب في مختلف الفئات.",
-      en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
-    },
-    image: "/homePage/news-2.png",
-    date: "2025-05-18",
-    href: "#",
-  },
-  {
-    id: 3,
-    tag: "NEWS",
-    title: {
-      ar: "أخضر الطاولة يتألق بدورة الالعاب الخليجية بثلاث ذهبيات وفضية وبرونزيتين واصل المنتخب السعودي لكرة الطاولة تألقه في دورة الألعاب الخليجية، محققاً إنجازاً مميزاً بعد حصد ثلاث ميداليات ذهبية وميدالية فضية وميداليتين برونزيتين، مؤكداً مكانة المملكة الريادية في رياضة كرة الطاولة على المستوى الخليجي.",
-      en: "Saudi Arabia hosts West Asia Youth and Men's & Women's Table Tennis Qualifiers — Dammam prepares to host the West Asia Youth Qualifiers for the Asian Championships in Uzbekistan 2025.",
-    },
-    image: "/homePage/news-3.png",
-    date: "2025-05-15",
-    href: "#",
-  },
-];
-
 const SECTION_LABEL = { ar: "الأخبار", en: "News" };
 const VIEW_ALL_LABEL = { ar: "عرض الكل", en: "View All" };
+
+const TAG_LABELS: Record<string, { ar: string; en: string }> = {
+  GENERAL: { ar: "أخبار", en: "News" },
+  PARTNERSHIPS: { ar: "شراكات", en: "Partnerships" },
+  TRAINING: { ar: "تدريب", en: "Training" },
+  TECH: { ar: "تقنية", en: "Tech" },
+  EVENT: { ar: "فعالية", en: "Event" },
+  FEDERATION: { ar: "الاتحاد", en: "Federation" },
+  TOURNAMENT: { ar: "بطولة", en: "Tournament" },
+  LEAGUE: { ar: "الدوري", en: "League" },
+  CLUB: { ar: "نادي", en: "Club" },
+  PLAYER: { ar: "لاعب", en: "Player" },
+  MEDIA: { ar: "إعلام", en: "Media" },
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface NewsCardProps {
   article: NewsArticle;
-  lang: "ar" | "en";
+  lang: Lang;
   index: number;
   isVisible: boolean;
 }
@@ -74,10 +56,11 @@ interface NewsCardProps {
 function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
   const [hovered, setHovered] = useState(false);
   const isAr = lang === "ar";
+  const tagLabel = TAG_LABELS[article.tag]?.[lang] ?? article.tag;
 
   return (
-    <a
-      href={"/news"}
+    <Link
+      href={article.href}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -91,12 +74,13 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
         minWidth: 0,
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(40px)",
-        transition: `opacity 0.6s ease ${index * 0.15}s, transform 0.6s ease ${index * 0.15}s`,
+        transition: `opacity 0.6s ease ${index * 0.15}s, transform 0.6s ease ${
+          index * 0.15
+        }s`,
         cursor: "pointer",
         position: "relative",
       }}
     >
-      {/* Image */}
       <div
         style={{
           position: "relative",
@@ -108,7 +92,7 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
       >
         <Image
           src={article.image}
-          alt={article.title[lang]}
+          alt={article.title}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           style={{
@@ -118,7 +102,6 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
           }}
         />
 
-        {/* Dark gradient overlay on image bottom */}
         <div
           aria-hidden="true"
           style={{
@@ -131,7 +114,6 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
         />
       </div>
 
-      {/* Card body */}
       <div
         style={{
           padding: "16px 20px 20px",
@@ -139,7 +121,6 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
           borderTop: "2px solid #005043",
         }}
       >
-        {/* Tag */}
         <span
           style={{
             display: "inline-block",
@@ -151,10 +132,9 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          {article.tag}
+          {tagLabel}
         </span>
 
-        {/* Divider dot row */}
         <div
           style={{
             display: "flex",
@@ -172,6 +152,7 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
               flexShrink: 0,
             }}
           />
+
           <div
             style={{
               height: 1,
@@ -181,7 +162,6 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
           />
         </div>
 
-        {/* Title */}
         <p
           style={{
             fontSize: 13,
@@ -195,10 +175,9 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
             textAlign: isAr ? "right" : "left",
           }}
         >
-          {article.title[lang]}
+          {article.title}
         </p>
 
-        {/* Arrow */}
         <div
           style={{
             marginTop: 14,
@@ -213,7 +192,9 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
               transition: "transform 0.3s ease",
               display: "inline-block",
               transform: hovered
-                ? isAr ? "translateX(-4px)" : "translateX(4px)"
+                ? isAr
+                  ? "translateX(-4px)"
+                  : "translateX(4px)"
                 : "translateX(0)",
             }}
           >
@@ -221,13 +202,11 @@ function NewsCard({ article, lang, index, isVisible }: NewsCardProps) {
           </span>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-function SectionHeader({ lang }: { lang: "ar" | "en" }) {
+function SectionHeader({ lang }: { lang: Lang }) {
   const isAr = lang === "ar";
 
   return (
@@ -240,32 +219,37 @@ function SectionHeader({ lang }: { lang: "ar" | "en" }) {
         flexDirection: isAr ? "row" : "row-reverse",
       }}
     >
-      {/* Title with accent underline */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span
-          style={{
-            fontSize: "clamp(28px, 4vw, 42px)",
-            fontWeight: 900,
-            color: "#ffffff",
-            letterSpacing: isAr ? 0 : -1,
-          }}
-        >
-          {SECTION_LABEL[lang]}
-        </span>
+        <div style={{ position: "relative", display: "inline-block" }}>
+          <div
+            style={{
+              position: "absolute",
+              right: isAr ? 0 : "auto",
+              left: isAr ? "auto" : 0,
+              bottom: 6,
+              zIndex: 0,
+              width: "45%",
+              height: 12,
+              borderRadius: 2,
+              background: "linear-gradient(90deg, #00c896, #005043)",
+            }}
+          />
 
-        {/* Green underline accent */}
-        <div
-          style={{
-            width: 56,
-            height: 5,
-            borderRadius: 3,
-            background: "linear-gradient(90deg, #00c896, #005043)",
-            alignSelf: "flex-end",
-            marginBottom: 6,
-          }}
-        />
+          <span
+            style={{
+              position: "relative",
+              zIndex: 1,
+              fontSize: "clamp(28px, 4vw, 42px)",
+              fontWeight: 900,
+              color: "#ffffff",
+              letterSpacing: isAr ? 0 : -1,
+              lineHeight: 1.1,
+            }}
+          >
+            {SECTION_LABEL[lang]}
+          </span>
+        </div>
 
-        {/* Arrow */}
         <span
           style={{
             fontSize: 26,
@@ -277,8 +261,7 @@ function SectionHeader({ lang }: { lang: "ar" | "en" }) {
         </span>
       </div>
 
-      {/* View all link */}
-      <a
+      <Link
         href="/news"
         style={{
           fontSize: 13,
@@ -291,16 +274,16 @@ function SectionHeader({ lang }: { lang: "ar" | "en" }) {
           opacity: 0.85,
           transition: "opacity 0.2s",
         }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.85")
-        }
+        onMouseEnter={(event) => {
+          event.currentTarget.style.opacity = "1";
+        }}
+        onMouseLeave={(event) => {
+          event.currentTarget.style.opacity = "0.85";
+        }}
       >
         {VIEW_ALL_LABEL[lang]}
         <span style={{ fontSize: 16 }}>{isAr ? "←" : "→"}</span>
-      </a>
+      </Link>
     </div>
   );
 }
@@ -311,12 +294,53 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
   const isAr = lang === "ar";
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
 
-  // Trigger entrance animations when section scrolls into view
+  useEffect(() => {
+    let shouldIgnore = false;
+
+    async function fetchLatestNews() {
+      try {
+        const response = await fetch("/api/news/latest", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch latest news.");
+        }
+
+        const data: LatestNewsResponse = await response.json();
+
+        if (!shouldIgnore) {
+          setArticles(data.articles);
+          setStatus("success");
+        }
+      } catch (error: unknown) {
+        console.error("Failed to fetch latest news:", error);
+
+        if (!shouldIgnore) {
+          setStatus("error");
+        }
+      }
+    }
+
+    fetchLatestNews();
+
+    return () => {
+      shouldIgnore = true;
+    };
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries: IntersectionObserverEntry[]) => {
+        const firstEntry = entries[0];
+
+        if (firstEntry?.isIntersecting) {
           setIsVisible(true);
           observer.disconnect();
         }
@@ -324,12 +348,14 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
       { threshold: 0.15 }
     );
 
-    if (sectionRef.current) observer.observe(sectionRef.current);
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
     return () => observer.disconnect();
   }, []);
 
   return (
-    
     <section
       ref={sectionRef}
       dir={isAr ? "rtl" : "ltr"}
@@ -342,7 +368,6 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
         color: "#ffffff",
       }}
     >
-      {/* Bottom curved green band (like the design) */}
       <svg
         aria-hidden="true"
         viewBox="0 0 1440 240"
@@ -363,6 +388,7 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
           fill="#005043"
         />
       </svg>
+
       <div
         style={{
           position: "relative",
@@ -374,39 +400,79 @@ export default function NewsSection({ lang = "ar" }: NewsSectionProps) {
       >
         <SectionHeader lang={lang} />
 
-        {/* Cards row */}
-        <div
-          className="news-cards-row"
-          style={{
-            display: "flex",
-            gap: 0,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
-          {NEWS_ARTICLES.map((article, index) => (
-            <NewsCard
-              key={article.id}
-              article={article}
-              lang={lang}
-              index={index}
-              isVisible={isVisible}
-            />
-          ))}
-        </div>
-      </div>
-<style jsx global>{`
-  @media (max-width: 768px) {
-    .news-cards-row {
-      flex-direction: column !important;
-    }
+        {status === "loading" && (
+          <p
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 14,
+              textAlign: isAr ? "right" : "left",
+            }}
+          >
+            {isAr ? "جاري تحميل الأخبار..." : "Loading latest news..."}
+          </p>
+        )}
 
-    .news-cards-row > a {
-      flex: none !important;
-      width: 100% !important;
-    }
-  }
-`}</style>
+        {status === "error" && (
+          <p
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 14,
+              textAlign: isAr ? "right" : "left",
+            }}
+          >
+            {isAr
+              ? "تعذر تحميل الأخبار في الوقت الحالي."
+              : "Could not load latest news right now."}
+          </p>
+        )}
+
+        {status === "success" && articles.length > 0 && (
+          <div
+            className="news-cards-row"
+            style={{
+              display: "flex",
+              gap: 0,
+              overflow: "hidden",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            {articles.map((article: NewsArticle, index: number) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                lang={lang}
+                index={index}
+                isVisible={isVisible}
+              />
+            ))}
+          </div>
+        )}
+
+        {status === "success" && articles.length === 0 && (
+          <p
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 14,
+              textAlign: isAr ? "right" : "left",
+            }}
+          >
+            {isAr ? "لا توجد أخبار منشورة حالياً." : "No published news yet."}
+          </p>
+        )}
+      </div>
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .news-cards-row {
+            flex-direction: column !important;
+          }
+
+          .news-cards-row > a {
+            flex: none !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

@@ -7,8 +7,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { label: "الرئيسية", href: "/presidency" },
-  { label: "عن الاتحاد", href: "/contact" },
+  { label: "الرئيسية", href: "/" },
+  { label: "عن الاتحاد", href: "/presidency" },
   { label: "المنتخبات", href: "/team" },
   { label: "الأندية", href: "/clubs" },
   { label: "الأخبار", href: "/news" },

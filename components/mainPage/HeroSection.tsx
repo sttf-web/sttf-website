@@ -30,7 +30,7 @@ export default function HeroMain() {
         {/* Left content */}
         <div
           className="
-            relative flex w-full flex-col items-center justify-center
+            relative mt-40 flex w-full flex-col items-center justify-center
             text-center text-white
             md:w-[46%] md:px-6
             lg:px-10
@@ -94,11 +94,11 @@ export default function HeroMain() {
           <div
             className="
               relative z-40
-              h-[300px] w-[300px]
-              sm:h-[420px] sm:w-[420px]
-              md:h-[560px] md:w-[560px]
-              lg:h-[680px] lg:w-[680px]
-              xl:h-[720px] xl:w-[720px]
+              h-[230px] w-[230px]
+              sm:h-[360px] sm:w-[360px]
+              md:h-[500px] md:w-[500px]
+              lg:h-[600px] lg:w-[600px]
+              xl:h-[660px] xl:w-[660px]
             "
           >
             <Image
