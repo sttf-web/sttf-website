@@ -32,7 +32,7 @@ const TEAMS: Team[] = [
   {
     key: "men",
     title: "المنتخب الأول للرجال",
-    coach: "عمرو موسي",
+    coach: "يورغن بيرسون",
     description: "تعرف على تشكيلة المنتخب ولاعبيه المميزين",
     players: [
       {
@@ -120,7 +120,7 @@ const TEAMS: Team[] = [
   {
     key: "women",
     title: "منتخب السيدات",
-    coach: "طارق يوسف",
+    coach: "مراد يوسف",
     description: "تعرف على تشكيلة المنتخب ولاعباته المميزات",
     players: [
       {
@@ -152,7 +152,7 @@ const TEAMS: Team[] = [
   {
     key: "paralympic",
     title: "منتخب البارالمبية",
-    coach: "سامح الشبراوي",
+    coach: "حسام الشوبري - زهراء الغرابي",
     description: "تعرف على تشكيلة المنتخب ولاعبيه المميزين",
     players: [
       {
@@ -220,7 +220,7 @@ function TeamSelectView({
       <section className="relative mx-auto max-w-3xl px-5 py-12 md:py-16">
 
 
-        <div className="space-y-6">
+        <div className="space-y-15">
           {TEAMS.map((team) => (
             <button
               key={team.key}
@@ -230,7 +230,7 @@ function TeamSelectView({
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(32,229,140,0.14),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
 
-              <div className="relative rounded-b-[1.5rem] bg-[#057A4B] px-6 py-7 text-center">
+              <div className="relative rounded-b-[1.5rem] bg-[#006F4D] px-6 py-7 text-center">
                 <h3 className="text-3xl font-black text-white">{team.title}</h3>
 
                 <div className="mt-2 flex items-center justify-center gap-2 text-lg text-white/75">
@@ -244,7 +244,7 @@ function TeamSelectView({
                   {team.description}
                 </p>
 
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#20E58C]">
+                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-white">
                   عرض التفاصيل
                   <ChevronLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
                 </span>

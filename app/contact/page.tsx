@@ -70,22 +70,21 @@ export default function ContactPage() {
 
       {/* Map */}
       <section className="w-full border-y border-[#067746]/60">
-<iframe
-  title="Location map"
-  src="https://maps.google.com/maps?q=8165%20Salah%20Ad%20Din%20Al%20Ayyubi%20Rd%2C%20Ad%20Dhubbat%2C%20Riyadh%2012623%2C%20Saudi%20Arabia&t=&z=16&ie=UTF8&iwloc=&output=embed"
-  className="h-[180px] w-full border-0 md:h-[260px]"
-  loading="lazy"
-  referrerPolicy="no-referrer-when-downgrade"
-/>
+      <iframe
+        title="Location map"
+        src="https://maps.google.com/maps?q=8165%20Salah%20Ad%20Din%20Al%20Ayyubi%20Rd%2C%20Ad%20Dhubbat%2C%20Riyadh%2012623%2C%20Saudi%20Arabia&t=&z=16&ie=UTF8&iwloc=&output=embed"
+        className="h-[180px] w-full border-0 md:h-[260px]"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
       </section>
 
-      {/* Contact cards */}
-      <section className="mx-auto max-w-6xl px-5 pt-20 md:px-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mx-auto max-w-3xl px-5 pt-20 md:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
           <ContactCard
             icon={<MapPin className="h-7 w-7" />}
             title="العنوان"
-            value="الرياض، الملقا"
+            value="الرياض ـ الملز "
           />
 
           <ContactCard
@@ -103,13 +102,13 @@ export default function ContactPage() {
           <ContactCard
             icon={<Clock className="h-7 w-7" />}
             title="مواعيد العمل"
-            value="8 AM – PM 5"
+            value=" 8 AM  – 5 PM "
           />
         </div>
       </section>
 
       {/* Form */}
-      <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
+      <section className="mx-auto max-w-2xl px-5 py-16 md:px-8">
         <form onSubmit={handleSubmit} className="mx-auto max-w-[860px] space-y-6">
           <Field label="الاسم الأول" name="name" />
 
@@ -201,18 +200,40 @@ function ContactCard({
   icon,
   title,
   value,
+  valueDir = "rtl",
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
+  valueDir?: "rtl" | "ltr";
 }) {
   return (
-    <div className="flex min-h-[120px] flex-col items-center justify-center rounded-[28px] border border-[#1faf5f] bg-[#2a2a2a] px-5 py-6 text-center shadow-[0_0_20px_rgba(0,0,0,0.35)]">
-      <div className="mb-3 text-[#00e676]">{icon}</div>
+    <div
+      className="
+        flex h-[118px] w-[118px] flex-col items-center justify-center
+        rounded-[32px] border border-[#1faf5f]
+        bg-[#2b2b2b] px-3 py-4 text-center
+        shadow-[0_8px_24px_rgba(0,0,0,0.35)]
+        transition duration-300
+        hover:-translate-y-1 hover:border-[#00e676]
+        hover:shadow-[0_12px_30px_rgba(0,230,118,0.14)]
+        sm:h-[126px] sm:w-[126px]
+      "
+    >
+      <div className="mb-2 flex h-7 w-7 items-center justify-center text-[#00e676]">
+        {icon}
+      </div>
 
-      <h3 className="text-base font-bold text-white">{title}</h3>
+      <h3 className="text-[12px] font-bold leading-5 text-white sm:text-[13px]">
+        {title}
+      </h3>
 
-      <p className="mt-1 text-sm leading-6 text-white/85">{value}</p>
+      <p
+        dir={valueDir}
+        className="mt-1 max-w-full text-[9px] font-medium leading-4 text-white/80 sm:text-[10px]"
+      >
+        {value}
+      </p>
     </div>
   );
 }

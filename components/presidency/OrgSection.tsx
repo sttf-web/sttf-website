@@ -3,143 +3,77 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Lang = "ar" | "en";
-
-interface OrgSectionProps {
-  lang?: Lang;
-}
-
 interface OrgMember {
   id: number;
-  name: {
-    ar: string;
-    en: string;
-  };
-  role: {
-    ar: string;
-    en: string;
-  };
+  name: string;
+  role: string;
   image: string;
   featured?: boolean;
 }
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const MEMBERS: OrgMember[] = [
   {
     id: 1,
     featured: true,
     image: "/presidency/profile1.png",
-    name: {
-      ar: "صاحب السمو الملكي الأمير محمد بن عبدالرحمن بن ناصر آل سعود",
-      en: "HRH Prince Mohammed bin Abdulrahman bin Nasser Al Saud",
-    },
-    role: {
-      ar: "رئيس الاتحاد",
-      en: "President",
-    },
+    name: "صاحب السمو الملكي الأمير محمد بن عبدالرحمن بن ناصر آل سعود",
+    role: "رئيس الاتحاد",
   },
   {
     id: 2,
     image: "/presidency/profile2.png",
-    name: {
-      ar: "أحمد بن علي آل محمد",
-      en: "Ahmed bin Ali Al Mohammed",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "أحمد بن علي آل محمد",
+    role: "عضو مجلس الإدارة",
   },
   {
     id: 3,
     image: "/presidency/profile3.png",
-    name: {
-      ar: "عبدالله بن فهد المغيرة",
-      en: "Abdullah bin Fahad Al Mughirah",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "عبدالله بن فهد المغيرة",
+    role: "عضو مجلس الإدارة",
   },
   {
     id: 4,
     image: "/presidency/profile4.png",
-    name: {
-      ar: "نورة فؤاد العليان",
-      en: "Noura Fouad Al Olayan",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "نورة فهاد العليان",
+    role: "عضو مجلس الإدارة",
   },
   {
     id: 5,
     image: "/presidency/profile5.png",
-    name: {
-      ar: "أليناه فهد المطلقان",
-      en: "Alenah Fahad Al Mutlaqan",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "ايثار فهد البلطان",
+    role: "نائب رئيس مجلس الادارة",
   },
   {
     id: 6,
     image: "/presidency/profile6.png",
-    name: {
-      ar: "عبدالعزيز راشد الدخيل",
-      en: "Abdulaziz Rashed Al Dakheel",
-    },
-    role: {
-      ar: "المدير التنفيذي",
-      en: "Executive Director",
-    },
+    name: "عبدالعزيز رائد اباالخيل",
+    role: "المدير التنفيذي",
   },
   {
     id: 7,
     image: "/presidency/profile7.png",
-    name: {
-      ar: "وائل بن عبدالله التو",
-      en: "Wael bin Abdullah Alto",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "وائل بن سعيد القو",
+    role: "عضو مجلس الإدارة",
   },
   {
     id: 8,
     image: "/presidency/profile8.png",
-    name: {
-      ar: "محمد بن ناصر مهناش",
-      en: "Mohammed bin Nasser Mihnash",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "محمد بن ناصر مهاوش ",
+    role: "عضو مجلس الإدارة",
   },
   {
     id: 9,
     image: "/presidency/profile9.png",
-    name: {
-      ar: "حسن الزهراني",
-      en: "Hassan Al Zahrani",
-    },
-    role: {
-      ar: "عضو مجلس الإدارة",
-      en: "Board Member",
-    },
+    name: "حسن الزهراني",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 10,
+    image: "/presidency/profile10.png",
+    name: "صاحب السمو الملكي الامير سعود بن سلطان آل سعود",
+    role: "عضو مجلس الإدارة",
   },
 ];
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 function useInViewOnce<T extends HTMLElement>(threshold = 0.18) {
   const ref = useRef<T | null>(null);
@@ -149,8 +83,10 @@ function useInViewOnce<T extends HTMLElement>(threshold = 0.18) {
     if (!ref.current) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries: IntersectionObserverEntry[]) => {
+        const firstEntry = entries[0];
+
+        if (firstEntry?.isIntersecting) {
           setVisible(true);
           observer.disconnect();
         }
@@ -166,48 +102,57 @@ function useInViewOnce<T extends HTMLElement>(threshold = 0.18) {
   return { ref, visible };
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function OrgSection({ lang = "ar" }: OrgSectionProps) {
-  const isAr = lang === "ar";
+export default function OrgSection() {
   const { ref, visible } = useInViewOnce<HTMLElement>();
 
-  const featuredMember = MEMBERS.find((member) => member.featured);
-  const regularMembers = MEMBERS.filter((member) => !member.featured);
+  const featuredMember = MEMBERS.find(
+    (member: OrgMember) => member.featured === true
+  );
+
+  const regularMembers = MEMBERS.filter(
+    (member: OrgMember) => member.featured !== true
+  );
 
   return (
     <section
       ref={ref}
-      dir={isAr ? "rtl" : "ltr"}
-      className="org-section"
-      style={{
-        fontFamily: isAr ? "'Tajawal', sans-serif" : "'Inter', sans-serif",
-      }}
+      dir="rtl"
+      className="relative overflow-hidden bg-black py-[clamp(72px,8vw,120px)] text-white"
     >
-      <div className="org-inner">
+      {/* Subtle dot grid */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:30px_30px]" />
+
+      {/* Green glows */}
+      <div className="pointer-events-none absolute left-[8%] top-[-180px] z-0 h-[300px] w-[300px] rounded-full bg-[#005043]/45 blur-[80px]" />
+      <div className="pointer-events-none absolute bottom-[-180px] left-[8%] z-0 h-[340px] w-[340px] rounded-full bg-[#005043]/40 blur-[80px]" />
+
+      <div className="relative z-[1] mx-auto max-w-7xl px-[clamp(18px,5vw,64px)]">
+        {/* Heading */}
         <div
-          className="org-heading-wrap"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(24px)",
-          }}
+          className={`
+            mx-auto mb-[clamp(32px,5vw,54px)] w-fit text-center
+            transition-all duration-700 ease-out
+            ${visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}
+          `}
         >
-          <h2 className="org-heading">
-            {isAr ? "أعضاء مجلس الإدارة" : "Board Members"}
+          <h2 className="m-0 text-[clamp(34px,5vw,58px)] font-black leading-[1.1] tracking-[-0.04em] text-white">
+            أعضاء مجلس الإدارة
           </h2>
 
-          <div className="org-heading-dots" aria-hidden="true">
-            {Array.from({ length: 18 }).map((_, index) => (
-              <span key={index} />
+          <div className="mt-2.5 flex justify-center gap-1 sm:gap-1.5">
+            {Array.from({ length: 18 }).map((_: unknown, index: number) => (
+              <span
+                key={index}
+                className="h-1.5 w-1.5 rounded-full bg-[#35ce83] shadow-[0_0_14px_rgba(53,206,131,0.7)] sm:h-[7px] sm:w-[7px]"
+              />
             ))}
           </div>
         </div>
 
         {featuredMember && (
-          <div className="org-featured-wrap">
+          <div className="mb-[clamp(32px,5vw,54px)] flex justify-center">
             <OrgCard
               member={featuredMember}
-              lang={lang}
               visible={visible}
               index={0}
               featured
@@ -215,209 +160,92 @@ export default function OrgSection({ lang = "ar" }: OrgSectionProps) {
           </div>
         )}
 
-        <div className="org-grid">
-          {regularMembers.map((member, index) => (
+        <div className="grid grid-cols-1 items-start gap-6 min-[520px]:grid-cols-2 min-[820px]:gap-7 min-[1100px]:grid-cols-4 min-[820px]:grid-cols-3 xl:gap-[clamp(24px,4vw,54px)]">
+          {regularMembers.map((member: OrgMember, index: number) => (
             <OrgCard
               key={member.id}
               member={member}
-              lang={lang}
               visible={visible}
               index={index + 1}
             />
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        .org-section {
-          position: relative;
-          overflow: hidden;
-          background: #000000;
-          color: #ffffff;
-          padding: clamp(72px, 8vw, 120px) 0;
-        }
-
-        .org-dots {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          pointer-events: none;
-          background-image: radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.035) 1px,
-            transparent 1px
-          );
-          background-size: 30px 30px;
-        }
-
-        .org-glow {
-          position: absolute;
-          z-index: 0;
-          pointer-events: none;
-          border-radius: 999px;
-          filter: blur(80px);
-        }
-
-        .org-glow-one {
-          width: 300px;
-          height: 300px;
-          top: -180px;
-          left: 8%;
-          background: rgba(0, 80, 67, 0.45);
-        }
-
-        .org-glow-two {
-          width: 340px;
-          height: 340px;
-          bottom: -180px;
-          left: 8%;
-          background: rgba(0, 80, 67, 0.42);
-        }
-
-        .org-inner {
-          position: relative;
-          z-index: 1;
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 clamp(18px, 5vw, 64px);
-        }
-
-        .org-heading-wrap {
-          width: fit-content;
-          margin: 0 auto clamp(32px, 5vw, 54px);
-          text-align: center;
-          transition: opacity 0.7s ease, transform 0.7s ease;
-        }
-
-        .org-heading {
-          margin: 0;
-          font-size: clamp(34px, 5vw, 58px);
-          font-weight: 950;
-          line-height: 1.1;
-          color: #ffffff;
-          letter-spacing: -0.04em;
-        }
-
-        .org-heading-dots {
-          margin-top: 10px;
-          display: flex;
-          justify-content: center;
-          gap: 6px;
-        }
-
-        .org-heading-dots span {
-          width: 7px;
-          height: 7px;
-          border-radius: 999px;
-          background: #35ce83;
-          box-shadow: 0 0 14px rgba(53, 206, 131, 0.7);
-        }
-
-        .org-featured-wrap {
-          display: flex;
-          justify-content: center;
-          margin-bottom: clamp(32px, 5vw, 54px);
-        }
-
-        .org-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: clamp(24px, 4vw, 54px);
-          align-items: start;
-        }
-
-        @media (max-width: 1100px) {
-          .org-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 820px) {
-          .org-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 28px;
-          }
-        }
-
-        @media (max-width: 520px) {
-          .org-section {
-            padding: 70px 0;
-          }
-
-          .org-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-          }
-
-          .org-heading-dots {
-            gap: 4px;
-          }
-
-          .org-heading-dots span {
-            width: 5px;
-            height: 5px;
-          }
-        }
-      `}</style>
     </section>
   );
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-
 function OrgCard({
   member,
-  lang,
   index,
   visible,
   featured = false,
 }: {
   member: OrgMember;
-  lang: Lang;
   index: number;
   visible: boolean;
   featured?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
-  const isAr = lang === "ar";
-
   return (
     <article
-      className={`org-card ${featured ? "org-card-featured" : ""}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className={`
+        group relative isolate mx-auto w-full overflow-hidden
+        border-[1.5px] border-[#35ce83]/70
+        bg-[linear-gradient(180deg,#020705_0%,#030d09_100%)]
+        shadow-[0_24px_60px_rgba(0,0,0,0.52)]
+        transition-all duration-500 ease-out
+        hover:border-[#35ce83] hover:shadow-[0_28px_70px_rgba(0,200,150,0.18),0_0_0_1px_rgba(53,206,131,0.25)]
+        ${
+          featured
+            ? "min-h-[350px] max-w-[285px] rounded-xl sm:min-h-[365px] sm:max-w-[320px]"
+            : "min-h-[330px] max-w-[260px] rounded-[10px] sm:min-h-[300px] sm:max-w-[230px]"
+        }
+        ${
+          visible
+            ? "translate-y-0 scale-100 opacity-100 hover:-translate-y-2 hover:scale-[1.015]"
+            : "translate-y-8 scale-[0.96] opacity-0"
+        }
+      `}
       style={{
-        opacity: visible ? 1 : 0,
-        transform: visible
-          ? hovered
-            ? "translateY(-8px) scale(1.015)"
-            : "translateY(0) scale(1)"
-          : "translateY(32px) scale(0.96)",
-        transition: `opacity 0.65s ease ${index * 0.08}s, transform 0.38s ease ${
-          index * 0.08
-        }s, border-color 0.25s ease, box-shadow 0.25s ease`,
-        borderColor: hovered ? "rgba(53, 206, 131, 0.95)" : "rgba(53, 206, 131, 0.72)",
-        boxShadow: hovered
-          ? "0 28px 70px rgba(0, 200, 150, 0.18), 0 0 0 1px rgba(53,206,131,0.25)"
-          : "0 24px 60px rgba(0,0,0,0.52)",
+        transitionDelay: `${index * 80}ms`,
       }}
     >
-      <div className="org-card-star" aria-hidden="true">
+      {/* Star background */}
+      <div
+        aria-hidden="true"
+        className={`
+          absolute z-0 opacity-45
+          ${featured ? "inset-4 opacity-50" : "inset-3"}
+        `}
+      >
         <Image
           src="/homePage/star.png"
           alt=""
           fill
           sizes={featured ? "320px" : "220px"}
-          className="org-card-star-image"
+          className="object-contain object-center drop-shadow-[0_0_20px_rgba(0,200,150,0.16)]"
         />
       </div>
 
-      <div className="org-card-grid-lines" aria-hidden="true" />
+      {/* Grid lines */}
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none absolute inset-0 z-[1] opacity-50
+          [background:linear-gradient(rgba(0,200,150,0.28),rgba(0,200,150,0.28))_center_44%/100%_1px_no-repeat,linear-gradient(rgba(0,200,150,0.25),rgba(0,200,150,0.25))_center_58%/100%_1px_no-repeat,linear-gradient(90deg,rgba(0,200,150,0.22),rgba(0,200,150,0.22))_center/1px_100%_no-repeat]
+        "
+      />
 
-      <div className="org-person-wrap">
+      {/* Person image */}
+      <div
+        className={`
+          absolute left-1/2 z-[2] -translate-x-1/2
+          ${featured ? "bottom-[68px] h-[78%] w-[90%]" : "bottom-[58px] h-[78%] w-[88%]"}
+        `}
+      >
         <Image
           src={member.image}
-          alt={member.name[lang]}
+          alt={member.name}
           fill
           priority={featured}
           sizes={
@@ -425,145 +253,30 @@ function OrgCard({
               ? "(max-width: 520px) 260px, 340px"
               : "(max-width: 520px) 240px, 260px"
           }
-          className="org-person-image"
+          className="object-contain object-bottom drop-shadow-[0_16px_28px_rgba(0,0,0,0.5)]"
         />
       </div>
 
-      <div className="org-card-copy">
-        <h3 className="org-card-name">{member.name[lang]}</h3>
-        <p className="org-card-role">{member.role[lang]}</p>
+      {/* Copy */}
+      <div className="absolute inset-x-0 bottom-0 z-[4] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.75)_20%,rgba(0,0,0,0.95)_100%)] px-3 pb-4 pt-3.5 text-center">
+        <h3
+          className={`
+            mb-1 text-center font-black leading-[1.35] text-white
+            ${featured ? "text-[13px] sm:text-sm" : "text-[12.5px] sm:text-xs"}
+          `}
+        >
+          {member.name}
+        </h3>
+
+        <p
+          className={`
+            m-0 text-center font-semibold leading-[1.4] text-white/70
+            ${featured ? "text-[10px]" : "text-[10px] sm:text-[9px]"}
+          `}
+        >
+          {member.role}
+        </p>
       </div>
-
-      <style jsx>{`
-        .org-card {
-          position: relative;
-          overflow: hidden;
-          width: 100%;
-          max-width: 230px;
-          min-height: 300px;
-          margin: 0 auto;
-          border: 1.5px solid;
-          border-radius: 10px;
-          background: linear-gradient(180deg, #020705 0%, #030d09 100%);
-          isolation: isolate;
-        }
-
-        .org-card-featured {
-          max-width: 320px;
-          min-height: 365px;
-          border-radius: 12px;
-        }
-
-        .org-card-star {
-          position: absolute;
-          inset: 12px;
-          z-index: 0;
-          opacity: 0.45;
-        }
-
-        .org-card-featured .org-card-star {
-          inset: 16px;
-          opacity: 0.48;
-        }
-
-        .org-card-star-image {
-          object-fit: contain;
-          object-position: center;
-          filter: drop-shadow(0 0 20px rgba(0, 200, 150, 0.16));
-        }
-
-        .org-card-grid-lines {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-          opacity: 0.5;
-          background:
-            linear-gradient(rgba(0, 200, 150, 0.28), rgba(0, 200, 150, 0.28))
-              center 44% / 100% 1px no-repeat,
-            linear-gradient(rgba(0, 200, 150, 0.25), rgba(0, 200, 150, 0.25))
-              center 58% / 100% 1px no-repeat,
-            linear-gradient(90deg, rgba(0, 200, 150, 0.22), rgba(0, 200, 150, 0.22))
-              center / 1px 100% no-repeat;
-        }
-
-        .org-person-wrap {
-          position: absolute;
-          left: 50%;
-          bottom: 58px;
-          z-index: 2;
-          width: 88%;
-          height: 78%;
-          transform: translateX(-50%);
-        }
-
-        .org-card-featured .org-person-wrap {
-          bottom: 68px;
-          width: 90%;
-          height: 78%;
-        }
-
-        .org-person-image {
-          object-fit: contain;
-          object-position: bottom center;
-          filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.5));
-        }
-
-        .org-card-copy {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 4;
-          padding: 14px 12px 16px;
-          text-align: center;
-          background: linear-gradient(
-            180deg,
-            rgba(0, 0, 0, 0) 0%,
-            rgba(0, 0, 0, 0.75) 20%,
-            rgba(0, 0, 0, 0.95) 100%
-          );
-        }
-
-        .org-card-name {
-          margin: 0 0 4px;
-          font-size: ${featured ? "14px" : "12px"};
-          line-height: 1.35;
-          font-weight: 900;
-          color: #ffffff;
-          text-align: center;
-          direction: ${isAr ? "rtl" : "ltr"};
-        }
-
-        .org-card-role {
-          margin: 0;
-          font-size: ${featured ? "10px" : "9px"};
-          line-height: 1.4;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.72);
-          text-align: center;
-        }
-
-        @media (max-width: 520px) {
-          .org-card {
-            max-width: 260px;
-            min-height: 330px;
-          }
-
-          .org-card-featured {
-            max-width: 285px;
-            min-height: 350px;
-          }
-
-          .org-card-name {
-            font-size: ${featured ? "13px" : "12.5px"};
-          }
-
-          .org-card-role {
-            font-size: 10px;
-          }
-        }
-      `}</style>
     </article>
   );
 }
