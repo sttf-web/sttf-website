@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { MatchStatus } from "@prisma/client";
 
+
 const WIN_POINTS = 3;
 
 function parsePositiveInt(value: FormDataEntryValue | null, fallback = 0) {
@@ -233,6 +234,74 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { error: "Failed to create match" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const matches = await prisma.match.findMany({
+      orderBy: {
+        date: "desc",
+      },
+      select: {
+        id: true,
+        clubOneId: true,
+        clubTwoId: true,
+        clubOneScore: true,
+        clubTwoScore: true,
+        date: true,
+        status: true,
+        clubOne: {
+          select: {
+            id: true,
+            clubName: true,
+            logo: true,
+          },
+        },
+        clubTwo: {
+          select: {
+            id: true,
+            clubName: true,
+            logo: true,
+          },
+        },
+      },
+    });
+
+    const clubs = await prisma.club.findMany({
+      orderBy: {
+        clubName: "asc",
+      },
+      select: {
+        id: true,
+        clubName: true,
+        logo: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      matches: matches.map((match) => ({
+        ...match,
+        date: match.date.toISOString(),
+      })),
+      clubs,
+    });
+  } catch (error: unknown) {
+    console.error("GET_MATCHES_ERROR", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch matches." },
       { status: 500 }
     );
   }

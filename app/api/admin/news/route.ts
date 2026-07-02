@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -15,6 +15,41 @@ const supabase = createClient(
 );
 
 const NEWS_IMAGES_BUCKET = process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
+
+function createSlug(value: string) {
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\u064B-\u065F]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function createUniqueSlug(title: string) {
+  const baseSlug = createSlug(title) || `news-${randomUUID()}`;
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existingNews = await prisma.news.findUnique({
+      where: {
+        slug,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingNews) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -160,37 +195,45 @@ export async function POST(req: Request) {
   }
 }
 
-function createSlug(value: string) {
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[\u064B-\u065F]/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
-}
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const publishedParam = searchParams.get("published");
 
-async function createUniqueSlug(title: string) {
-  const baseSlug = createSlug(title) || `news-${randomUUID()}`;
-
-  let slug = baseSlug;
-  let counter = 1;
-
-  while (true) {
-    const existingNews = await prisma.news.findUnique({
-      where: {
-        slug,
-      },
+    const articles = await prisma.news.findMany({
+      where: publishedParam === "true" ? { published: true } : undefined,
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
       select: {
         id: true,
+        title: true,
+        text: true,
+        tag: true,
+        date: true,
+        picture: true,
+        published: true,
+        slug: true,
       },
     });
 
-    if (!existingNews) {
-      return slug;
-    }
+    return NextResponse.json({
+      articles: articles.map((article) => ({
+        ...article,
+        date: article.date.toISOString(),
+      })),
+    });
+  } catch (error: unknown) {
+    console.error("Failed to fetch admin news:", error);
 
-    slug = `${baseSlug}-${counter}`;
-    counter++;
+    return NextResponse.json(
+      { error: "Failed to fetch admin news." },
+      { status: 500 }
+    );
   }
 }

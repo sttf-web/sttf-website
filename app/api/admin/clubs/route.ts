@@ -148,6 +148,9 @@ export async function GET() {
         id: true,
         clubName: true,
         location: true,
+        coach: true,
+        manager: true,
+        phoneNumber: true,
         logo: true,
         _count: {
           select: {
