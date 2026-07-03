@@ -1,19 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
-  ArrowRight,
-  ChevronLeft,
-  Trophy,
-  Users,
-  UserRound,
   ArrowLeft,
+  ChevronLeft,
+  UserRound,
+  Users,
 } from "lucide-react";
 
-type TeamKey = "men" | "youth" | "women" | "paralympic";
-
-type Player = {
+type TeamPlayer = {
   id: string;
   name: string;
   number: string;
@@ -21,184 +17,78 @@ type Player = {
 };
 
 type Team = {
-  key: TeamKey;
+  id: string;
+  category: string;
   title: string;
   coach: string;
   description: string;
-  players: Player[];
+  players: TeamPlayer[];
 };
 
-const TEAMS: Team[] = [
-  {
-    key: "men",
-    title: "المنتخب الأول للرجال",
-    coach: "يورغن بيرسون",
-    description: "تعرف على تشكيلة المنتخب ولاعبيه المميزين",
-    players: [
-      {
-        id: "m1",
-        name: "علي الخضراوي",
-        number: "1",
-        image: "/images/players/player-1.png",
-      },
-      {
-        id: "m2",
-        name: "سالم السويلم",
-        number: "2",
-        image: "/images/players/player-2.png",
-      },
-      {
-        id: "m3",
-        name: "خالد الشريف",
-        number: "3",
-        image: "/images/players/player-3.png",
-      },
-      {
-        id: "m4",
-        name: "عبدالعزيز بوشليبي",
-        number: "4",
-        image: "/images/players/player-4.png",
-      },
-    ],
-  },
-  {
-    key: "youth",
-    title: "منتخب الفئات السنية",
-    coach: "يوسف ربيع",
-    description: "تعرف على تشكيلة الشباب ولاعبيه المميزين",
-    players: [
-      {
-        id: "y1",
-        name: "سعود الطاهر",
-        number: "5",
-        image: "/images/players/youth-1.png",
-      },
-      {
-        id: "y2",
-        name: "عبدالرحمن الطاهر",
-        number: "6",
-        image: "/images/players/youth-2.png",
-      },
-      {
-        id: "y3",
-        name: "علي خضراوي",
-        number: "7",
-        image: "/images/players/youth-3.png",
-      },
-      {
-        id: "y4",
-        name: "يوسف حنيفة",
-        number: "8",
-        image: "/images/players/youth-4.png",
-      },
-      {
-        id: "y5",
-        name: "ريان المنجومي",
-        number: "9",
-        image: "/images/players/youth-5.png",
-      },
-      {
-        id: "y6",
-        name: "فارس الطاهر",
-        number: "10",
-        image: "/images/players/youth-6.png",
-      },
-      {
-        id: "y7",
-        name: "علي خضراوي",
-        number: "11",
-        image: "/images/players/youth-7.png",
-      },
-      {
-        id: "y8",
-        name: "احمد الخلف",
-        number: "12",
-        image: "/images/players/youth-8.png",
-      },
-    ],
-  },
-  {
-    key: "women",
-    title: "منتخب السيدات",
-    coach: "مراد يوسف",
-    description: "تعرف على تشكيلة المنتخب ولاعباته المميزات",
-    players: [
-      {
-        id: "w1",
-        name: "نهال القحطاني",
-        number: "13",
-        image: "/images/players/women-1.png",
-      },
-      {
-        id: "w2",
-        name: "اميرة الظفيري",
-        number: "14",
-        image: "/images/players/women-2.png",
-      },
-      {
-        id: "w3",
-        name: "نوز باجحزر",
-        number: "15",
-        image: "/images/players/women-3.png",
-      },
-      {
-        id: "w4",
-        name: "حصة الخالدي",
-        number: "16",
-        image: "/images/players/women-4.png",
-      },
-    ],
-  },
-  {
-    key: "paralympic",
-    title: "منتخب البارالمبية",
-    coach: "حسام الشوبري - زهراء الغرابي",
-    description: "تعرف على تشكيلة المنتخب ولاعبيه المميزين",
-    players: [
-      {
-        id: "p1",
-        name: "مريم المريسل",
-        number: "17",
-        image: "/images/players/para-1.png",
-      },
-      {
-        id: "p2",
-        name: "زهراء آلطالع",
-        number: "18",
-        image: "/images/players/para-2.png",
-      },
-      {
-        id: "p3",
-        name: "علي خضراوي",
-        number: "19",
-        image: "/images/players/para-3.png",
-      },
-      {
-        id: "p4",
-        name: "ابراهيم الحسن",
-        number: "20",
-        image: "/images/players/para-4.png",
-      },
-    ],
-  },
-];
+type TeamsResponse = {
+  success: boolean;
+  teams: Team[];
+  error?: string;
+};
 
 export default function TeamsPage() {
-  const [selectedTeamKey, setSelectedTeamKey] = useState<TeamKey | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const selectedTeam = useMemo(
-    () => TEAMS.find((team) => team.key === selectedTeamKey),
-    [selectedTeamKey]
+    () => teams.find((team: Team) => team.id === selectedTeamId),
+    [teams, selectedTeamId]
   );
 
+  useEffect(() => {
+    async function fetchTeams() {
+      try {
+        const response = await fetch("/api/teams", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = (await response.json()) as TeamsResponse;
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch teams.");
+        }
+
+        setTeams(data.teams);
+      } catch (error: unknown) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "تعذر تحميل المنتخبات."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTeams();
+  }, []);
+
   return (
-    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black text-white">
-      {!selectedTeam ? (
-        <TeamSelectView onSelectTeam={setSelectedTeamKey} />
+    <main
+      dir="rtl"
+      className="relative min-h-screen overflow-hidden bg-black text-white"
+    >
+      {loading ? (
+        <PageHero
+          title="المنتخبات الوطنية"
+          subtitle="جاري تحميل المنتخبات..."
+        />
+      ) : errorMessage ? (
+        <>
+          <PageHero title="المنتخبات الوطنية" subtitle={errorMessage} />
+        </>
+      ) : !selectedTeam ? (
+        <TeamSelectView teams={teams} onSelectTeam={setSelectedTeamId} />
       ) : (
         <TeamPlayersView
           team={selectedTeam}
-          onBack={() => setSelectedTeamKey(null)}
+          onBack={() => setSelectedTeamId(null)}
         />
       )}
     </main>
@@ -206,9 +96,11 @@ export default function TeamsPage() {
 }
 
 function TeamSelectView({
+  teams,
   onSelectTeam,
 }: {
-  onSelectTeam: (team: TeamKey) => void;
+  teams: Team[];
+  onSelectTeam: (teamId: string) => void;
 }) {
   return (
     <>
@@ -218,40 +110,48 @@ function TeamSelectView({
       />
 
       <section className="relative mx-auto max-w-3xl px-5 py-12 md:py-16">
+        {teams.length === 0 ? (
+          <div className="rounded-[1.75rem] border border-white/10 bg-[#1f1f1f]/95 px-6 py-12 text-center">
+            <p className="text-lg font-semibold text-white/70">
+              لا توجد منتخبات منشورة حالياً
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-15">
+            {teams.map((team: Team) => (
+              <button
+                key={team.id}
+                type="button"
+                onClick={() => onSelectTeam(team.id)}
+                className="group relative w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#1f1f1f]/95 text-right shadow-2xl shadow-black/30 transition hover:-translate-y-1 hover:border-[#20E58C]/60 hover:bg-[#252525]"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(32,229,140,0.14),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
 
+                <div className="relative rounded-b-[1.5rem] bg-[#006F4D] px-6 py-7 text-center">
+                  <h3 className="text-3xl font-black text-white">
+                    {team.title}
+                  </h3>
 
-        <div className="space-y-15">
-          {TEAMS.map((team) => (
-            <button
-              key={team.key}
-              type="button"
-              onClick={() => onSelectTeam(team.key)}
-              className="group relative w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#1f1f1f]/95 text-right shadow-2xl shadow-black/30 transition hover:-translate-y-1 hover:border-[#20E58C]/60 hover:bg-[#252525]"
-            >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(32,229,140,0.14),transparent_35%)] opacity-0 transition group-hover:opacity-100" />
-
-              <div className="relative rounded-b-[1.5rem] bg-[#006F4D] px-6 py-7 text-center">
-                <h3 className="text-3xl font-black text-white">{team.title}</h3>
-
-                <div className="mt-2 flex items-center justify-center gap-2 text-lg text-white/75">
-                  <UserRound className="h-3.5 w-3.5" />
-                  <span>المدرب: {team.coach}</span>
+                  <div className="mt-2 flex items-center justify-center gap-2 text-lg text-white/75">
+                    <UserRound className="h-3.5 w-3.5" />
+                    <span>المدرب: {team.coach}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="relative px-6 py-6 text-center">
-                <p className="text-3xl leading-7 text-white/75">
-                  {team.description}
-                </p>
+                <div className="relative px-6 py-6 text-center">
+                  <p className="text-3xl leading-7 text-white/75">
+                    {team.description}
+                  </p>
 
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-white">
-                  عرض التفاصيل
-                  <ChevronLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
+                  <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-white">
+                    عرض التفاصيل
+                    <ChevronLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </>
   );
@@ -266,15 +166,13 @@ function TeamPlayersView({
 }) {
   return (
     <>
-      <section className="relative overflow-hidden bg-[#01311F] px-5 py-9 mt-10">
-        <div className="absolute inset-0 " />
-
-        <div className="relative mt-20 mx-auto flex max-w-6xl items-center justify-center gap-5">
+      <section className="relative mt-10 overflow-hidden bg-[#01311F] px-5 py-9">
+        <div className="relative mx-auto mt-20 flex max-w-6xl items-center justify-center gap-5">
           <button
             type="button"
             onClick={onBack}
             aria-label="Back to teams"
-            className="absolute left-0 flex h-11 w-11 items-center justify-center "
+            className="absolute left-0 flex h-11 w-11 items-center justify-center"
           >
             <ArrowLeft className="h-25 w-25" />
           </button>
@@ -297,22 +195,28 @@ function TeamPlayersView({
           </h2>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {team.players.map((player) => (
-            <PlayerCard key={player.id} player={player} />
-          ))}
-        </div>
+        {team.players.length === 0 ? (
+          <div className="rounded-[1.75rem] border border-white/10 bg-[#1f1f1f]/95 px-6 py-12 text-center">
+            <p className="text-lg font-semibold text-white/70">
+              لا يوجد لاعبون مضافون لهذا المنتخب حالياً
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {team.players.map((player: TeamPlayer) => (
+              <PlayerCard key={player.id} player={player} />
+            ))}
+          </div>
+        )}
       </section>
     </>
   );
 }
 
-function PlayerCard({ player }: { player: Player }) {
+function PlayerCard({ player }: { player: TeamPlayer }) {
   return (
     <article className="group relative w-full overflow-hidden bg-black">
-      {/* Image area */}
       <div className="relative flex h-[320px] items-end justify-center overflow-hidden px-4 pt-6">
-        {/* Star behind player */}
         <Image
           src="/homePage/star.png"
           alt=""
@@ -322,7 +226,6 @@ function PlayerCard({ player }: { player: Player }) {
           className="pointer-events-none absolute left-1/2 top-6 z-0 h-[250px] w-[250px] -translate-x-1/2 object-contain opacity-55 transition duration-500 group-hover:scale-105"
         />
 
-        {/* Player */}
         <Image
           src={player.image}
           alt={player.name}
@@ -332,24 +235,19 @@ function PlayerCard({ player }: { player: Player }) {
         />
       </div>
 
-      {/* Info area */}
       <div className="relative px-3 pb-5">
-        {/* Top mint line */}
         <div className="mb-2 h-[4px] w-full bg-[#CFFEF2]" />
 
         <div className="flex items-center justify-between gap-4 px-3">
-          {/* Number - left */}
           <p className="text-left text-xl font-black leading-none text-white">
             {player.number}
           </p>
 
-          {/* Name - right */}
           <h3 className="max-w-[55%] text-right text-lg font-medium leading-tight text-white">
             {player.name}
           </h3>
         </div>
 
-        {/* Bottom mint line */}
         <div className="mt-3 h-[4px] w-full bg-[#CFFEF2]" />
       </div>
     </article>
@@ -359,9 +257,7 @@ function PlayerCard({ player }: { player: Player }) {
 function PageHero({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <section className="relative overflow-hidden bg-[#01311F] px-6 py-16 text-center">
-      <div className="absolute inset-0 " />
-
-      <div className="relative mt-20 mx-auto max-w-4xl">
+      <div className="relative mx-auto mt-20 max-w-4xl">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white/10">
           <Users className="h-7 w-7" />
         </div>

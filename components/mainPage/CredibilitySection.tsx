@@ -4,19 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-interface PartnerLogo {
-  src: string;
-  alt: string;
-}
+type PartnerLogo = {
+  id: string;
+  name: string;
+  image: string;
+};
 
-const PARTNER_LOGOS: PartnerLogo[] = [
-  { src: "/homePage/logo1.png", alt: "شريك 1" },
-  { src: "/homePage/logo2.png", alt: "شريك 2" },
-  { src: "/homePage/logo3.png", alt: "شريك 3" },
-  { src: "/homePage/logo4.png", alt: "شريك 4" },
-  { src: "/homePage/logo5.png", alt: "شريك 5" },
-  { src: "/homePage/logo6.png", alt: "شريك 6" },
-];
+type PartnersResponse = {
+  success: boolean;
+  partners: PartnerLogo[];
+  error?: string;
+};
 
 function useInViewOnce<T extends HTMLElement>(threshold = 0.15) {
   const ref = useRef<T | null>(null);
@@ -45,7 +43,13 @@ function useInViewOnce<T extends HTMLElement>(threshold = 0.15) {
   return { ref, visible };
 }
 
-function PartnersStrip({ visible }: { visible: boolean }) {
+function PartnersStrip({
+  visible,
+  partners,
+}: {
+  visible: boolean;
+  partners: PartnerLogo[];
+}) {
   return (
     <div className="flex flex-col gap-7 px-6 py-[52px] pb-[60px] md:px-[clamp(24px,5vw,80px)]">
       <p
@@ -59,9 +63,9 @@ function PartnersStrip({ visible }: { visible: boolean }) {
       </p>
 
       <div className="flex flex-wrap items-center justify-end gap-[clamp(24px,4vw,56px)]">
-        {PARTNER_LOGOS.map((logo: PartnerLogo, index: number) => (
+        {partners.map((partner: PartnerLogo, index: number) => (
           <div
-            key={logo.src}
+            key={partner.id}
             className={`
               relative h-12 w-[clamp(60px,8vw,110px)] brightness-0 invert
               transition-all duration-700 ease-out
@@ -72,8 +76,8 @@ function PartnersStrip({ visible }: { visible: boolean }) {
             }}
           >
             <Image
-              src={logo.src}
-              alt={logo.alt}
+              src={partner.image}
+              alt={partner.name}
               fill
               sizes="110px"
               className="object-contain"
@@ -88,7 +92,6 @@ function PartnersStrip({ visible }: { visible: boolean }) {
 function LocationPanel({ visible }: { visible: boolean }) {
   return (
     <div className="grid min-h-[380px] grid-cols-1 items-center gap-[clamp(24px,4vw,64px)] px-6 py-[clamp(48px,6vw,80px)] md:grid-cols-2 md:px-[clamp(24px,5vw,80px)]">
-      {/* Saudi Arabia map image */}
       <div
         className={`
           relative h-[clamp(220px,28vw,380px)] w-full
@@ -105,7 +108,6 @@ function LocationPanel({ visible }: { visible: boolean }) {
         />
       </div>
 
-      {/* Text content */}
       <div
         className={`
           flex flex-col gap-4 text-right
@@ -126,7 +128,7 @@ function LocationPanel({ visible }: { visible: boolean }) {
             href="/contact"
             className="mt-2 inline-block rounded-lg border-[1.5px] border-[#005043] px-6 py-2.5 text-sm font-bold text-[#005043] no-underline transition-colors duration-200 hover:bg-[#005043] hover:text-white"
           >
-           أنقر هنا
+            أنقر هنا
           </Link>
         </div>
       </div>
@@ -136,16 +138,38 @@ function LocationPanel({ visible }: { visible: boolean }) {
 
 export default function CredibilitySection() {
   const { ref, visible } = useInViewOnce<HTMLElement>(0.12);
+  const [partners, setPartners] = useState<PartnerLogo[]>([]);
+
+  useEffect(() => {
+    async function fetchPartners() {
+      try {
+        const response = await fetch("/api/partners", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = (await response.json()) as PartnersResponse;
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch partners.");
+        }
+
+        setPartners(data.partners);
+      } catch (error: unknown) {
+        console.error("Failed to load partners:", error);
+      }
+    }
+
+    fetchPartners();
+  }, []);
 
   return (
     <section ref={ref} dir="rtl" className="relative overflow-hidden">
-      {/* Top panel */}
       <div className="relative overflow-hidden bg-[#050F0A]">
         <div className="relative z-[1] mx-auto max-w-7xl">
-          <PartnersStrip visible={visible} />
+          <PartnersStrip visible={visible} partners={partners} />
         </div>
 
-        {/* Bottom curve into light panel */}
         <svg
           aria-hidden="true"
           viewBox="0 0 1440 120"
@@ -159,7 +183,6 @@ export default function CredibilitySection() {
         </svg>
       </div>
 
-      {/* Bottom panel */}
       <div className="relative overflow-hidden bg-[linear-gradient(160deg,#c8ede6_0%,#9fd8cc_100%)]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(0,80,67,0.06)_1px,transparent_1px)] bg-[length:28px_28px]" />
 
@@ -167,7 +190,6 @@ export default function CredibilitySection() {
           <LocationPanel visible={visible} />
         </div>
 
-        {/* Bottom black arc */}
         <svg
           aria-hidden="true"
           viewBox="0 0 1440 120"

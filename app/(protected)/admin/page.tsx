@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   CalendarDays,
+  Handshake,
   Mail,
   Newspaper,
   ShieldCheck,
@@ -23,6 +24,8 @@ import MessagesList from "@/components/admin/MessagesList";
 import ManageClubsPanel from "@/components/admin/ManageClubsPanel";
 import ManageMatchesPanel from "@/components/admin/ManageMatchesPanel";
 import ManagePlayersPanel from "@/components/admin/ManagePlayersPanel";
+import ManageTeamsPanel from "@/components/admin/ManageTeamsPanel";
+import ManagePartnersPanel from "@/components/admin/ManagePartnersPanel";
 
 type AdminTabId =
   | "clubs"
@@ -30,8 +33,10 @@ type AdminTabId =
   | "matches"
   | "referees"
   | "news"
+  | "teams"
   | "messages"
-  | "league";
+  | "league"
+  | "partners";
 
 type AdminTab = {
   id: AdminTabId;
@@ -90,6 +95,20 @@ const ADMIN_TABS: AdminTab[] = [
     title: "League Table",
     description: "Manage and review the federation league standings.",
     icon: Trophy,
+  },
+  {
+  id: "teams",
+  label: "Teams",
+  title: "National Teams",
+  description: "Create and manage national team sections and players.",
+  icon: UsersRound,
+},
+  {
+    id: "partners",
+    label: "Partners",
+    title: "Partner Management",
+    description: "Manage and review partner information and relationships.",
+    icon: Handshake,
   },
 ];
 
@@ -242,6 +261,10 @@ export default function Admin() {
           {activeTabId === "messages" && <MessagesList />}
 
           {activeTabId === "league" && <AdminLeagueTable />}
+
+          {activeTabId === "teams" && <ManageTeamsPanel />}
+
+          {activeTabId === "partners" && <ManagePartnersPanel />}
         </div>
       </div>
     </main>
