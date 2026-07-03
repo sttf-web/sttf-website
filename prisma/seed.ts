@@ -173,6 +173,78 @@ const TEAMS: SeedTeam[] = [
   },
 ];
 
+type SeedOrgMember = {
+  id: number;
+  name: string;
+  role: string;
+  image: string;
+  featured?: boolean;
+};
+
+const ORG_MEMBERS: SeedOrgMember[] = [
+  {
+    id: 1,
+    featured: true,
+    image: "/presidency/profile1.png",
+    name: "صاحب السمو الملكي الأمير محمد بن عبدالرحمن بن ناصر آل سعود",
+    role: "رئيس الاتحاد",
+  },
+  {
+    id: 2,
+    image: "/presidency/profile2.png",
+    name: "أحمد بن علي آل محمد",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 3,
+    image: "/presidency/profile3.png",
+    name: "عبدالله بن فهد المغيرة",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 4,
+    image: "/presidency/profile4.png",
+    name: "نورة فهاد العليان",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 5,
+    image: "/presidency/profile5.png",
+    name: "ايثار فهد البلطان",
+    role: "نائب رئيس مجلس الادارة",
+  },
+  {
+    id: 6,
+    image: "/presidency/profile6.png",
+    name: "عبدالعزيز رائد اباالخيل",
+    role: "المدير التنفيذي",
+  },
+  {
+    id: 7,
+    image: "/presidency/profile7.png",
+    name: "وائل بن سعيد القو",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 8,
+    image: "/presidency/profile8.png",
+    name: "محمد بن ناصر مهاوش ",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 9,
+    image: "/presidency/profile9.png",
+    name: "حسن الزهراني",
+    role: "عضو مجلس الإدارة",
+  },
+  {
+    id: 10,
+    image: "/presidency/profile10.png",
+    name: "صاحب السمو الملكي الامير سعود بن سلطان آل سعود",
+    role: "عضو مجلس الإدارة",
+  },
+];
+
 type SeedPartner = {
   src: string;
   alt: string;
@@ -319,10 +391,44 @@ async function seedPartners() {
   console.log("Seeded partner logos.");
 }
 
+async function seedOrgMembers() {
+  const memberImages = ORG_MEMBERS.map(
+    (member: SeedOrgMember) => member.image
+  );
+
+  await prisma.orgMember.updateMany({
+    data: {
+      featured: false,
+    },
+  });
+
+  await prisma.orgMember.deleteMany({
+    where: {
+      image: {
+        in: memberImages,
+      },
+    },
+  });
+
+  await prisma.orgMember.createMany({
+    data: ORG_MEMBERS.map((member: SeedOrgMember, memberIndex: number) => ({
+      name: member.name,
+      role: member.role,
+      image: member.image,
+      featured: member.featured === true,
+      published: true,
+      order: memberIndex,
+    })),
+  });
+
+  console.log("Seeded org members.");
+}
+
 async function main() {
   await seedAdminUser();
   await seedNationalTeams();
   await seedPartners();
+  await seedOrgMembers();
 }
 
 main()

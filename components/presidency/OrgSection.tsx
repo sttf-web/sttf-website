@@ -1,79 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-interface OrgMember {
-  id: number;
+type OrgMember = {
+  id: string;
   name: string;
   role: string;
   image: string;
-  featured?: boolean;
-}
+  featured: boolean;
+  order: number;
+};
 
-const MEMBERS: OrgMember[] = [
-  {
-    id: 1,
-    featured: true,
-    image: "/presidency/profile1.png",
-    name: "صاحب السمو الملكي الأمير محمد بن عبدالرحمن بن ناصر آل سعود",
-    role: "رئيس الاتحاد",
-  },
-  {
-    id: 2,
-    image: "/presidency/profile2.png",
-    name: "أحمد بن علي آل محمد",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 3,
-    image: "/presidency/profile3.png",
-    name: "عبدالله بن فهد المغيرة",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 4,
-    image: "/presidency/profile4.png",
-    name: "نورة فهاد العليان",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 5,
-    image: "/presidency/profile5.png",
-    name: "ايثار فهد البلطان",
-    role: "نائب رئيس مجلس الادارة",
-  },
-  {
-    id: 6,
-    image: "/presidency/profile6.png",
-    name: "عبدالعزيز رائد اباالخيل",
-    role: "المدير التنفيذي",
-  },
-  {
-    id: 7,
-    image: "/presidency/profile7.png",
-    name: "وائل بن سعيد القو",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 8,
-    image: "/presidency/profile8.png",
-    name: "محمد بن ناصر مهاوش ",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 9,
-    image: "/presidency/profile9.png",
-    name: "حسن الزهراني",
-    role: "عضو مجلس الإدارة",
-  },
-  {
-    id: 10,
-    image: "/presidency/profile10.png",
-    name: "صاحب السمو الملكي الامير سعود بن سلطان آل سعود",
-    role: "عضو مجلس الإدارة",
-  },
-];
+type OrgMembersResponse = {
+  success: boolean;
+  members: OrgMember[];
+  error?: string;
+};
 
 function useInViewOnce<T extends HTMLElement>(threshold = 0.18) {
   const ref = useRef<T | null>(null);
@@ -104,14 +47,46 @@ function useInViewOnce<T extends HTMLElement>(threshold = 0.18) {
 
 export default function OrgSection() {
   const { ref, visible } = useInViewOnce<HTMLElement>();
+  const [members, setMembers] = useState<OrgMember[]>([]);
 
-  const featuredMember = MEMBERS.find(
-    (member: OrgMember) => member.featured === true
-  );
+  useEffect(() => {
+    async function fetchOrgMembers() {
+      try {
+        const response = await fetch("/api/org-members", {
+          method: "GET",
+          cache: "no-store",
+        });
 
-  const regularMembers = MEMBERS.filter(
-    (member: OrgMember) => member.featured !== true
-  );
+        const data = (await response.json()) as OrgMembersResponse;
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch org members.");
+        }
+
+        setMembers(data.members);
+      } catch (error: unknown) {
+        console.error("Failed to load org members:", error);
+      }
+    }
+
+    fetchOrgMembers();
+  }, []);
+
+  const featuredMember = useMemo(() => {
+    const explicitFeatured = members.find(
+      (member: OrgMember) => member.featured === true
+    );
+
+    return explicitFeatured ?? members[0] ?? null;
+  }, [members]);
+
+  const regularMembers = useMemo(() => {
+    if (!featuredMember) return members;
+
+    return members.filter(
+      (member: OrgMember) => member.id !== featuredMember.id
+    );
+  }, [members, featuredMember]);
 
   return (
     <section
@@ -119,15 +94,12 @@ export default function OrgSection() {
       dir="rtl"
       className="relative overflow-hidden bg-black py-[clamp(72px,8vw,120px)] text-white"
     >
-      {/* Subtle dot grid */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:30px_30px]" />
 
-      {/* Green glows */}
       <div className="pointer-events-none absolute left-[8%] top-[-180px] z-0 h-[300px] w-[300px] rounded-full bg-[#005043]/45 blur-[80px]" />
       <div className="pointer-events-none absolute bottom-[-180px] left-[8%] z-0 h-[340px] w-[340px] rounded-full bg-[#005043]/40 blur-[80px]" />
 
       <div className="relative z-[1] mx-auto max-w-7xl px-[clamp(18px,5vw,64px)]">
-        {/* Heading */}
         <div
           className={`
             mx-auto mb-[clamp(32px,5vw,54px)] w-fit text-center
@@ -160,7 +132,7 @@ export default function OrgSection() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-6 min-[520px]:grid-cols-2 min-[820px]:gap-7 min-[1100px]:grid-cols-4 min-[820px]:grid-cols-3 xl:gap-[clamp(24px,4vw,54px)]">
+        <div className="grid grid-cols-1 items-start gap-6 min-[520px]:grid-cols-2 min-[820px]:grid-cols-3 min-[820px]:gap-7 min-[1100px]:grid-cols-4 xl:gap-[clamp(24px,4vw,54px)]">
           {regularMembers.map((member: OrgMember, index: number) => (
             <OrgCard
               key={member.id}
@@ -210,7 +182,6 @@ function OrgCard({
         transitionDelay: `${index * 80}ms`,
       }}
     >
-      {/* Star background */}
       <div
         aria-hidden="true"
         className={`
@@ -227,7 +198,6 @@ function OrgCard({
         />
       </div>
 
-      {/* Grid lines */}
       <div
         aria-hidden="true"
         className="
@@ -236,7 +206,6 @@ function OrgCard({
         "
       />
 
-      {/* Person image */}
       <div
         className={`
           absolute left-1/2 z-[2] -translate-x-1/2
@@ -257,7 +226,6 @@ function OrgCard({
         />
       </div>
 
-      {/* Copy */}
       <div className="absolute inset-x-0 bottom-0 z-[4] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.75)_20%,rgba(0,0,0,0.95)_100%)] px-3 pb-4 pt-3.5 text-center">
         <h3
           className={`
