@@ -16,7 +16,7 @@ export default function HeroMain() {
       <div className="absolute inset-0 bg-[#050507]/45" />
 
       {/* Left tilted green section */}
-      <div className=" absolute left-[-15%] top-[10%] z-10 h-[58%] w-[110%] -rotate-[-8deg] bg-gradient-to-r from-[#003d29] via-[#002b1e] to-[#000f0b] shadow-2xl" />
+      <div className=" absolute left-[-15%] top-[20%] z-10 h-[58%] w-[120%] -rotate-[-8deg] bg-gradient-to-r from-[#003d29] via-[#002b1e] to-[#000f0b] shadow-2xl" />
 
       {/* Main content */}
       <div
