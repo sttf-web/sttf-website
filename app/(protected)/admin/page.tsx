@@ -9,6 +9,7 @@ import {
   Newspaper,
   ShieldCheck,
   Trophy,
+  Users,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import ManageMatchesPanel from "@/components/admin/ManageMatchesPanel";
 import ManagePlayersPanel from "@/components/admin/ManagePlayersPanel";
 import ManageTeamsPanel from "@/components/admin/ManageTeamsPanel";
 import ManagePartnersPanel from "@/components/admin/ManagePartnersPanel";
+import ManageOrgMembersPanel from "@/components/admin/ManageOrgMembersPanel";
 
 type AdminTabId =
   | "clubs"
@@ -36,7 +38,8 @@ type AdminTabId =
   | "teams"
   | "messages"
   | "league"
-  | "partners";
+  | "partners"
+  | "org";
 
 type AdminTab = {
   id: AdminTabId;
@@ -110,6 +113,13 @@ const ADMIN_TABS: AdminTab[] = [
     description: "Manage and review partner information and relationships.",
     icon: Handshake,
   },
+  {
+    id: "org",
+    label: "Organization",
+    title: "Organization Management",
+    description: "Manage organization members and their roles.",
+    icon: Users,
+  }
 ];
 
 export default function Admin() {
@@ -265,6 +275,9 @@ export default function Admin() {
           {activeTabId === "teams" && <ManageTeamsPanel />}
 
           {activeTabId === "partners" && <ManagePartnersPanel />}
+
+          {activeTabId === "org" && <ManageOrgMembersPanel />}
+          
         </div>
       </div>
     </main>

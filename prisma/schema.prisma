@@ -346,3 +346,25 @@ model Partner {
   @@index([published])
   @@index([order])
 }
+
+/**
+ * Presidency
+ */
+model OrgMember {
+  id        String   @id @default(cuid())
+
+  name      String
+  role      String
+  image     String
+
+  featured  Boolean  @default(false)
+  published Boolean  @default(true)
+  order     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([featured])
+  @@index([published])
+  @@index([order])
+}
