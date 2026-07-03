@@ -279,3 +279,70 @@ enum NewsTag {
   PLAYER
   MEDIA
 }
+
+/**
+ * Team
+ */
+
+model NationalTeam {
+  id          String               @id @default(cuid())
+
+  /**
+   * This replaces the old frontend key:
+   * men, youth, women, paralympic, etc.
+   */
+  category    String               @unique
+
+  title       String
+  coach       String
+  description String
+
+  published   Boolean              @default(true)
+  order       Int                  @default(0)
+
+  players     NationalTeamPlayer[]
+
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([category])
+  @@index([published])
+  @@index([order])
+}
+
+model NationalTeamPlayer {
+  id        String       @id @default(cuid())
+
+  name      String
+  number    String
+  image     String
+
+  order     Int          @default(0)
+
+  teamId    String
+  team      NationalTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([teamId])
+  @@index([order])
+}
+
+/**
+ * Partners
+ */
+model Partner {
+  id        String   @id @default(cuid())
+
+  name      String
+  image     String
+  published Boolean  @default(true)
+  order     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published])
+  @@index([order])
+}

@@ -175,3 +175,63 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const players = await prisma.player.findMany({
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        age: true,
+        picture: true,
+        country: true,
+        ranking: true,
+        number: true,
+        division: true,
+        clubId: true,
+        club: {
+          select: {
+            id: true,
+            clubName: true,
+            logo: true,
+          },
+        },
+      },
+    });
+
+    const clubs = await prisma.club.findMany({
+      orderBy: {
+        clubName: "asc",
+      },
+      select: {
+        id: true,
+        clubName: true,
+        logo: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      players,
+      clubs,
+    });
+  } catch (error: unknown) {
+    console.error("GET_PLAYERS_ERROR", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch players." },
+      { status: 500 }
+    );
+  }
+}
