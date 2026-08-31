@@ -35,6 +35,9 @@ type CommitteesResponse = {
   error?: string;
 };
 
+const DEFAULT_PERSON_IMAGE =
+  "/images/defaultPerson.png";
+
 export default function CommitteesPage() {
   const [committees, setCommittees] =
     useState<Committee[]>([]);
@@ -90,7 +93,9 @@ export default function CommitteesPage() {
         }
 
         const loadedCommittees =
-          Array.isArray(data.committees)
+          Array.isArray(
+            data.committees
+          )
             ? data.committees
             : [];
 
@@ -98,15 +103,13 @@ export default function CommitteesPage() {
           loadedCommittees
         );
 
-        /*
-         * Automatically select the first committee
-         * when the page initially loads.
-         */
         if (
-          loadedCommittees.length > 0
+          loadedCommittees.length >
+          0
         ) {
           setSelectedCommitteeSlug(
-            loadedCommittees[0].slug
+            loadedCommittees[0]
+              .slug
           );
         }
       } catch (error) {
@@ -153,16 +156,22 @@ export default function CommitteesPage() {
         ═════════════════════════════ */}
         {!loading &&
           !error &&
-          committees.length > 0 && (
+          committees.length >
+            0 && (
             <div
               className="
-                grid grid-cols-1 gap-x-14 gap-y-7
+                grid
+                grid-cols-1
+                gap-x-14
+                gap-y-7
                 sm:grid-cols-2
                 lg:grid-cols-4
               "
             >
               {committees.map(
-                (committee) => {
+                (
+                  committee
+                ) => {
                   const isActive =
                     committee.slug ===
                     selectedCommitteeSlug;
@@ -182,7 +191,8 @@ export default function CommitteesPage() {
                         min-h-[44px]
                         rounded-md
                         border
-                        px-5 py-2
+                        px-5
+                        py-2
                         text-sm
                         font-bold
                         transition
@@ -230,13 +240,14 @@ export default function CommitteesPage() {
         {/* ═════════════════════════════
             ERROR
         ═════════════════════════════ */}
-        {!loading && error && (
-          <div className="mt-10 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-400">
-            <AlertCircle className="h-5 w-5 shrink-0" />
+        {!loading &&
+          error && (
+            <div className="mt-10 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-400">
+              <AlertCircle className="h-5 w-5 shrink-0" />
 
-            {error}
-          </div>
-        )}
+              {error}
+            </div>
+          )}
 
         {/* ═════════════════════════════
             SELECTED COMMITTEE
@@ -270,9 +281,14 @@ export default function CommitteesPage() {
                   {Array.from({
                     length: 10,
                   }).map(
-                    (_, index) => (
+                    (
+                      _,
+                      index
+                    ) => (
                       <span
-                        key={index}
+                        key={
+                          index
+                        }
                         className="h-2.5 w-2.5 rounded-full bg-[#18d96d]"
                       />
                     )
@@ -313,13 +329,14 @@ export default function CommitteesPage() {
 
               <div>
                 <h2 className="text-xl font-black">
-                  لا توجد لجان حالياً
+                  لا توجد لجان
+                  حالياً
                 </h2>
 
                 <p className="mt-2 text-sm text-white/40">
-                  سيتم عرض اللجان هنا
-                  بعد إضافتها من لوحة
-                  التحكم.
+                  سيتم عرض اللجان
+                  هنا بعد إضافتها من
+                  لوحة التحكم.
                 </p>
               </div>
             </div>
@@ -338,24 +355,140 @@ function CommitteeMembers({
 }: {
   members: CommitteeMember[];
 }) {
+  /*
+   * Always sort using the member order.
+   */
+  const sortedMembers =
+    useMemo(() => {
+      return [...members].sort(
+        (a, b) =>
+          a.order - b.order
+      );
+    }, [members]);
+
+  /*
+   * The member with order === 0
+   * is ALWAYS the person at the top.
+   *
+   * If no member has order 0,
+   * fall back to the first member.
+   */
+  const topMember =
+    useMemo(() => {
+      return (
+        sortedMembers.find(
+          (member) =>
+            member.order === 0
+        ) ??
+        sortedMembers[0] ??
+        null
+      );
+    }, [sortedMembers]);
+
+  /*
+   * Everybody except the top member
+   * goes into the 3-column grid.
+   */
+  const remainingMembers =
+    useMemo(() => {
+      if (!topMember) {
+        return [];
+      }
+
+      return sortedMembers.filter(
+        (member) =>
+          member.id !==
+          topMember.id
+      );
+    }, [
+      sortedMembers,
+      topMember,
+    ]);
+
+  if (!topMember) {
+    return null;
+  }
+
   return (
-    <div
-      className="
-        mx-auto mt-16
-        grid max-w-5xl
-        grid-cols-1
-        place-items-center
-        gap-x-14 gap-y-16
-        sm:grid-cols-2
-        lg:grid-cols-3
-      "
-    >
-      {members.map((member) => (
-        <CommitteeMemberCard
-          key={member.id}
-          member={member}
+    <div className="relative mx-auto mt-16 w-full max-w-6xl">
+      {/* ═════════════════════════════
+          TREE BACKGROUND
+      ═════════════════════════════ */}
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          left-1/2
+          top-[70px]
+          z-0
+          hidden
+          h-[720px]
+          w-[900px]
+          max-w-[90vw]
+          -translate-x-1/2
+          lg:block
+        "
+      >
+        <Image
+          src="/homePage/star.png"
+          alt=""
+          fill
+          sizes="900px"
+          className="
+            object-contain
+            object-top
+            opacity-55
+          "
         />
-      ))}
+      </div>
+
+      {/* ═════════════════════════════
+          POSITION 0 / PRESIDENT
+      ═════════════════════════════ */}
+      <div className="relative z-10 flex justify-center">
+        <CommitteeMemberCard
+          member={topMember}
+          featured
+        />
+      </div>
+
+      {/* ═════════════════════════════
+          REST OF MEMBERS
+          3 PER ROW
+      ═════════════════════════════ */}
+      {remainingMembers.length >
+        0 && (
+        <div
+          className="
+            relative
+            z-10
+            mx-auto
+            mt-16
+            grid
+            max-w-5xl
+            grid-cols-1
+            place-items-center
+            gap-x-14
+            gap-y-16
+            sm:grid-cols-2
+            lg:grid-cols-3
+          "
+        >
+          {remainingMembers.map(
+            (member) => (
+              <CommitteeMemberCard
+                key={
+                  member.id
+                }
+                member={
+                  member
+                }
+              />
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -366,33 +499,68 @@ function CommitteeMembers({
 
 function CommitteeMemberCard({
   member,
+  featured = false,
 }: {
   member: CommitteeMember;
+  featured?: boolean;
 }) {
+  const imageSource =
+    member.image?.trim()
+      ? member.image
+      : DEFAULT_PERSON_IMAGE;
+
   return (
-    <article className="group flex w-full max-w-[270px] flex-col items-center text-center">
+    <article
+      className={`
+        group
+        flex
+        w-full
+        flex-col
+        items-center
+        text-center
+
+        ${
+          featured
+            ? "max-w-[290px]"
+            : "max-w-[270px]"
+        }
+      `}
+    >
       {/* Image */}
       <div
-        className="
+        className={`
           relative
-          h-[210px]
-          w-[210px]
           overflow-hidden
           border
           border-[#18d96d]
           bg-black
-          md:h-[230px]
-          md:w-[230px]
-        "
+
+          ${
+            featured
+              ? `
+                h-[220px]
+                w-[220px]
+                md:h-[240px]
+                md:w-[240px]
+              `
+              : `
+                h-[210px]
+                w-[210px]
+                md:h-[230px]
+                md:w-[230px]
+              `
+          }
+        `}
       >
         <Image
-          src={member.image}
+          src={imageSource}
           alt={member.name}
           fill
-          sizes="
-            (max-width: 768px) 210px,
-            230px
-          "
+          sizes={
+            featured
+              ? "(max-width: 768px) 220px, 240px"
+              : "(max-width: 768px) 210px, 230px"
+          }
           className="
             object-contain
             object-bottom
@@ -431,8 +599,9 @@ function EmptyCommittee() {
         </h2>
 
         <p className="mt-1 text-sm text-white/40">
-          سيتم عرض أعضاء هذه اللجنة بعد
-          إضافتهم من لوحة التحكم.
+          سيتم عرض أعضاء هذه
+          اللجنة بعد إضافتهم من
+          لوحة التحكم.
         </p>
       </div>
     </div>
