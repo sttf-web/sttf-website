@@ -131,16 +131,17 @@ export default function AppPromoSection({
           <StarBlock />
 
           <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-            <span className="text-4xl leading-none text-white md:text-5xl">
-              {isAr ? "→" : "→"}
+            <span className="text-xl font-black text-[#00d984] md:text-2xl">
+              {t.preLabel}
             </span>
 
             <div className="rounded-lg border border-white/15 bg-white/20 px-6 py-1.5 font-sans text-xl font-black tracking-[1px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
               {t.appTag}
             </div>
 
-            <span className="text-xl font-black text-[#00d984] md:text-2xl">
-              {t.preLabel}
+
+            <span className="text-4xl leading-none text-white md:text-5xl">
+              {isAr ? "→" : "→"}
             </span>
           </div>
 

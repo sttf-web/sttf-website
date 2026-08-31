@@ -130,7 +130,8 @@ model Club {
   homeMatches     Match[]  @relation("ClubOneMatches")
   awayMatches     Match[]  @relation("ClubTwoMatches")
 
-  leagueStanding  LeagueStanding?
+  // A club can have one standing per season
+  leagueStandings LeagueStanding[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -155,6 +156,15 @@ model Match {
   clubOneScore   Int         @default(0)
   clubTwoScore   Int         @default(0)
 
+  /**
+   * League season.
+   *
+   * Examples:
+   * "2025/2026"
+   * "2026/2027"
+   */
+  season         String      @default("2025/2026")
+
   date           DateTime
   status         MatchStatus @default(SCHEDULED)
 
@@ -165,6 +175,8 @@ model Match {
   @@index([clubTwoId])
   @@index([date])
   @@index([status])
+  @@index([season])
+  @@index([season, date])
 }
 
 enum MatchStatus {
@@ -182,8 +194,15 @@ enum MatchStatus {
 model LeagueStanding {
   id             String   @id @default(cuid())
 
-  clubId         String   @unique
+  clubId         String
   club           Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  /**
+   * Example:
+   * "2025/2026"
+   * "2026/2027"
+   */
+  season         String   @default("2025/2026")
 
   matchesPlayed  Int      @default(0)
   won            Int      @default(0)
@@ -206,8 +225,16 @@ model LeagueStanding {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  /**
+   * A club can only have one standing per season,
+   * but can appear again in another season.
+   */
+  @@unique([clubId, season])
+
+  @@index([season])
   @@index([points])
   @@index([won])
+  @@index([season, points])
 }
 
 /**
