@@ -395,3 +395,56 @@ model OrgMember {
   @@index([published])
   @@index([order])
 }
+
+/**
+ * Federation Committees
+ *
+ * Examples:
+ * - Appeals Committee
+ * - Disciplinary Committee
+ * - Players & Coaches Committee
+ * - Competitions Committee
+ * - Referees Committee
+ * - Paralympic Committee
+ * - National Teams Committee
+ * - Financial Disputes Committee
+ */
+model Committee {
+  id          String            @id @default(cuid())
+
+  slug        String            @unique
+  name        String
+  description String?
+
+  published   Boolean           @default(true)
+  order       Int               @default(0)
+
+  members     CommitteeMember[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([published])
+  @@index([order])
+}
+
+model CommitteeMember {
+  id          String      @id @default(cuid())
+
+  name        String
+  title       String
+  image       String
+
+  published   Boolean     @default(true)
+  order       Int         @default(0)
+
+  committeeId String
+  committee   Committee   @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([committeeId])
+  @@index([published])
+  @@index([order])
+}
