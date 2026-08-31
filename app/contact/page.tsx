@@ -96,7 +96,7 @@ export default function ContactPage() {
           <ContactCard
             icon={<Mail className="h-7 w-7" />}
             title="البريد الإلكتروني"
-            value="info@sttfs.sa"
+            value="info@sttf.sa"
           />
 
           <ContactCard
@@ -200,12 +200,10 @@ function ContactCard({
   icon,
   title,
   value,
-  valueDir = "rtl",
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
-  valueDir?: "rtl" | "ltr";
 }) {
   return (
     <div
@@ -228,11 +226,8 @@ function ContactCard({
         {title}
       </h3>
 
-      <p
-        dir={valueDir}
-        className="mt-1 max-w-full text-[9px] font-medium leading-4 text-white/80 sm:text-[10px]"
-      >
-        {value}
+      <p className="mt-1 max-w-full text-[9px] font-medium leading-4 text-white/80 sm:text-[10px]">
+        <bdi>{value}</bdi>
       </p>
     </div>
   );
