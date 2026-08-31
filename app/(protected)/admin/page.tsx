@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   CalendarDays,
+  Gavel,
   Handshake,
   Mail,
   Newspaper,
@@ -28,6 +29,7 @@ import ManagePlayersPanel from "@/components/admin/ManagePlayersPanel";
 import ManageTeamsPanel from "@/components/admin/ManageTeamsPanel";
 import ManagePartnersPanel from "@/components/admin/ManagePartnersPanel";
 import ManageOrgMembersPanel from "@/components/admin/ManageOrgMembersPanel";
+import ManageCommitteesPanel from "@/components/admin/ManageCommitteesPanel";
 
 type AdminTabId =
   | "clubs"
@@ -39,7 +41,8 @@ type AdminTabId =
   | "messages"
   | "league"
   | "partners"
-  | "org";
+  | "org"
+  | "committees";
 
 type AdminTab = {
   id: AdminTabId;
@@ -100,12 +103,12 @@ const ADMIN_TABS: AdminTab[] = [
     icon: Trophy,
   },
   {
-  id: "teams",
-  label: "Teams",
-  title: "National Teams",
-  description: "Create and manage national team sections and players.",
-  icon: UsersRound,
-},
+    id: "teams",
+    label: "Teams",
+    title: "National Teams",
+    description: "Create and manage national team sections and players.",
+    icon: UsersRound,
+  },
   {
     id: "partners",
     label: "Partners",
@@ -119,7 +122,15 @@ const ADMIN_TABS: AdminTab[] = [
     title: "Organization Management",
     description: "Manage organization members and their roles.",
     icon: Users,
-  }
+  },
+  {
+    id: "committees",
+    label: "Committees",
+    title: "Committee Management",
+    description:
+      "Add, edit, reorder, publish, and remove members of federation committees.",
+    icon: Gavel,
+  },
 ];
 
 export default function Admin() {
@@ -137,10 +148,8 @@ export default function Admin() {
 
   return (
     <main className="relative mt-10 min-h-screen overflow-hidden bg-[linear-gradient(135deg,#002b23_0%,#005043_45%,#007a62_80%,#003d34_100%)]">
-      {/* Background dot grid */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:32px_32px]" />
 
-      {/* Background glow blobs */}
       <svg
         className="pointer-events-none absolute inset-0 z-0 h-full w-full"
         xmlns="http://www.w3.org/2000/svg"
@@ -150,6 +159,7 @@ export default function Admin() {
             <stop offset="0%" stopColor="#00c896" stopOpacity="0.13" />
             <stop offset="100%" stopColor="#00c896" stopOpacity="0" />
           </radialGradient>
+
           <radialGradient id="blob2" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#00c896" stopOpacity="0.10" />
             <stop offset="100%" stopColor="#00c896" stopOpacity="0" />
@@ -168,6 +178,7 @@ export default function Admin() {
           strokeOpacity="0.04"
           strokeWidth="1"
         />
+
         <line
           x1="50%"
           y1="0"
@@ -240,8 +251,8 @@ export default function Admin() {
         <div className="space-y-6">
           {activeTabId === "clubs" && (
             <>
-            <CreateClubForm />
-            <ManageClubsPanel/>
+              <CreateClubForm />
+              <ManageClubsPanel />
             </>
           )}
 
@@ -277,7 +288,8 @@ export default function Admin() {
           {activeTabId === "partners" && <ManagePartnersPanel />}
 
           {activeTabId === "org" && <ManageOrgMembersPanel />}
-          
+
+          {activeTabId === "committees" && <ManageCommitteesPanel />}
         </div>
       </div>
     </main>

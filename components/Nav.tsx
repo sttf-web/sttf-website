@@ -14,7 +14,7 @@ const navLinks = [
   { label: "الأخبار", href: "/news" },
   // { label: "اللوائح", href: "/board" }, 
   { label: "الدوري", href: "/league" },
-  // { label: "اللجان", href: "/committee" },
+  { label: "اللجان", href: "/committees" },
   { label: "المباريات", href: "/matches" },
 ];
 

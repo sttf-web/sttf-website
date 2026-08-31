@@ -18,6 +18,25 @@ type SeedTeam = {
   players: SeedPlayer[];
 };
 
+type SeedCommittee = {
+  slug: string;
+  name: string;
+  order: number;
+};
+
+type SeedOrgMember = {
+  id: number;
+  name: string;
+  role: string;
+  image: string;
+  featured?: boolean;
+};
+
+type SeedPartner = {
+  src: string;
+  alt: string;
+};
+
 const TEAMS: SeedTeam[] = [
   {
     key: "men",
@@ -173,13 +192,48 @@ const TEAMS: SeedTeam[] = [
   },
 ];
 
-type SeedOrgMember = {
-  id: number;
-  name: string;
-  role: string;
-  image: string;
-  featured?: boolean;
-};
+const COMMITTEES: SeedCommittee[] = [
+  {
+    slug: "appeals",
+    name: "لجنة الاستئناف",
+    order: 1,
+  },
+  {
+    slug: "disciplinary",
+    name: "لجنة الانضباط",
+    order: 2,
+  },
+  {
+    slug: "players-coaches",
+    name: "لجنة اللاعبين والمدربين",
+    order: 3,
+  },
+  {
+    slug: "competitions",
+    name: "لجنة المسابقات",
+    order: 4,
+  },
+  {
+    slug: "referees",
+    name: "لجنة الحكام",
+    order: 5,
+  },
+  {
+    slug: "paralympic",
+    name: "لجنة البارالمبية",
+    order: 6,
+  },
+  {
+    slug: "national-teams",
+    name: "لجنة المنتخبات",
+    order: 7,
+  },
+  {
+    slug: "financial-disputes",
+    name: "لجنة فض المنازعات المالية",
+    order: 8,
+  },
+];
 
 const ORG_MEMBERS: SeedOrgMember[] = [
   {
@@ -245,18 +299,31 @@ const ORG_MEMBERS: SeedOrgMember[] = [
   },
 ];
 
-type SeedPartner = {
-  src: string;
-  alt: string;
-};
-
 const PARTNER_LOGOS: SeedPartner[] = [
-  { src: "/homePage/logo1.png", alt: "شريك 1" },
-  { src: "/homePage/logo2.png", alt: "شريك 2" },
-  { src: "/homePage/logo3.png", alt: "شريك 3" },
-  { src: "/homePage/logo4.png", alt: "شريك 4" },
-  { src: "/homePage/logo5.png", alt: "شريك 5" },
-  { src: "/homePage/logo6.png", alt: "شريك 6" },
+  {
+    src: "/homePage/logo1.png",
+    alt: "شريك 1",
+  },
+  {
+    src: "/homePage/logo2.png",
+    alt: "شريك 2",
+  },
+  {
+    src: "/homePage/logo3.png",
+    alt: "شريك 3",
+  },
+  {
+    src: "/homePage/logo4.png",
+    alt: "شريك 4",
+  },
+  {
+    src: "/homePage/logo5.png",
+    alt: "شريك 5",
+  },
+  {
+    src: "/homePage/logo6.png",
+    alt: "شريك 6",
+  },
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -322,6 +389,8 @@ async function seedAdminUser() {
 }
 
 async function seedNationalTeams() {
+  console.log("Seeding national teams...");
+
   for (const [teamIndex, team] of TEAMS.entries()) {
     const savedTeam = await prisma.nationalTeam.upsert({
       where: {
@@ -355,21 +424,59 @@ async function seedNationalTeams() {
     });
 
     await prisma.nationalTeamPlayer.createMany({
-      data: team.players.map((player: SeedPlayer, playerIndex: number) => ({
-        name: player.name,
-        number: player.number,
-        image: player.image,
-        order: playerIndex,
-        teamId: savedTeam.id,
-      })),
+      data: team.players.map(
+        (player: SeedPlayer, playerIndex: number) => ({
+          name: player.name,
+          number: player.number,
+          image: player.image,
+          order: playerIndex,
+          teamId: savedTeam.id,
+        })
+      ),
     });
 
     console.log(`Seeded team: ${savedTeam.title}`);
   }
 }
 
+async function seedCommittees() {
+  console.log("Seeding committees...");
+
+  for (const committee of COMMITTEES) {
+    const savedCommittee = await prisma.committee.upsert({
+      where: {
+        slug: committee.slug,
+      },
+      update: {
+        name: committee.name,
+        order: committee.order,
+        published: true,
+      },
+      create: {
+        slug: committee.slug,
+        name: committee.name,
+        order: committee.order,
+        published: true,
+      },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+      },
+    });
+
+    console.log(`Seeded committee: ${savedCommittee.name}`);
+  }
+
+  console.log("Seeded committees.");
+}
+
 async function seedPartners() {
-  const partnerImages = PARTNER_LOGOS.map((partner: SeedPartner) => partner.src);
+  console.log("Seeding partner logos...");
+
+  const partnerImages = PARTNER_LOGOS.map(
+    (partner: SeedPartner) => partner.src
+  );
 
   await prisma.partner.deleteMany({
     where: {
@@ -380,18 +487,22 @@ async function seedPartners() {
   });
 
   await prisma.partner.createMany({
-    data: PARTNER_LOGOS.map((partner: SeedPartner, partnerIndex: number) => ({
-      name: partner.alt,
-      image: partner.src,
-      published: true,
-      order: partnerIndex,
-    })),
+    data: PARTNER_LOGOS.map(
+      (partner: SeedPartner, partnerIndex: number) => ({
+        name: partner.alt,
+        image: partner.src,
+        published: true,
+        order: partnerIndex,
+      })
+    ),
   });
 
   console.log("Seeded partner logos.");
 }
 
 async function seedOrgMembers() {
+  console.log("Seeding organization members...");
+
   const memberImages = ORG_MEMBERS.map(
     (member: SeedOrgMember) => member.image
   );
@@ -411,33 +522,43 @@ async function seedOrgMembers() {
   });
 
   await prisma.orgMember.createMany({
-    data: ORG_MEMBERS.map((member: SeedOrgMember, memberIndex: number) => ({
-      name: member.name,
-      role: member.role,
-      image: member.image,
-      featured: member.featured === true,
-      published: true,
-      order: memberIndex,
-    })),
+    data: ORG_MEMBERS.map(
+      (member: SeedOrgMember, memberIndex: number) => ({
+        name: member.name,
+        role: member.role,
+        image: member.image,
+        featured: member.featured === true,
+        published: true,
+        order: memberIndex,
+      })
+    ),
   });
 
   console.log("Seeded org members.");
 }
 
 async function main() {
+  console.log("Starting database seed...");
+
   await seedAdminUser();
   await seedNationalTeams();
+  await seedCommittees();
   await seedPartners();
   await seedOrgMembers();
+
+  console.log("All seed operations completed.");
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
+
     console.log("Seed completed.");
   })
   .catch(async (error: unknown) => {
     console.error("Seed failed:", error);
+
     await prisma.$disconnect();
+
     process.exit(1);
   });
