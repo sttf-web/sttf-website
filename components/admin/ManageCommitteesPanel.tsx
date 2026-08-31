@@ -85,13 +85,17 @@ export default function ManageCommitteesPanel() {
       const contentType = response.headers.get("content-type");
 
       if (!contentType?.includes("application/json")) {
-        throw new Error("The committees API returned an invalid response.");
+        throw new Error(
+          "The committees API returned an invalid response."
+        );
       }
 
       const data: CommitteesResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to load committees.");
+        throw new Error(
+          data.error || "Failed to load committees."
+        );
       }
 
       const loadedCommittees = Array.isArray(data.committees)
@@ -103,7 +107,9 @@ export default function ManageCommitteesPanel() {
       setSelectedCommitteeId((current) => {
         if (
           current &&
-          loadedCommittees.some((committee) => committee.id === current)
+          loadedCommittees.some(
+            (committee) => committee.id === current
+          )
         ) {
           return current;
         }
@@ -114,7 +120,9 @@ export default function ManageCommitteesPanel() {
       console.error("LOAD_ADMIN_COMMITTEES_ERROR", error);
 
       setError(
-        error instanceof Error ? error.message : "Failed to load committees."
+        error instanceof Error
+          ? error.message
+          : "Failed to load committees."
       );
     } finally {
       setLoading(false);
@@ -153,11 +161,6 @@ export default function ManageCommitteesPanel() {
       return;
     }
 
-    if (!imageFile) {
-      setError("Member image is required.");
-      return;
-    }
-
     try {
       setCreating(true);
       setError("");
@@ -165,31 +168,87 @@ export default function ManageCommitteesPanel() {
 
       const formData = new FormData();
 
-      formData.set("committeeId", selectedCommitteeId);
-      formData.set("name", form.name);
-      formData.set("title", form.title);
-      formData.set("order", form.order);
-      formData.set("published", String(form.published));
-      formData.set("image", imageFile);
+      formData.set(
+        "committeeId",
+        selectedCommitteeId
+      );
 
-      const response = await fetch("/api/admin/committees", {
-        method: "POST",
-        body: formData,
-      });
+      formData.set(
+        "name",
+        form.name
+      );
+
+      formData.set(
+        "title",
+        form.title
+      );
+
+      formData.set(
+        "order",
+        form.order
+      );
+
+      formData.set(
+        "published",
+        String(form.published)
+      );
+
+      /*
+       * IMAGE IS OPTIONAL.
+       *
+       * If no image is selected, do not send
+       * an image field at all.
+       *
+       * The backend will use:
+       *
+       * /images/defaultPerson.png
+       */
+      if (imageFile) {
+        formData.set(
+          "image",
+          imageFile
+        );
+      }
+
+      const response = await fetch(
+        "/api/admin/committees",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const contentType =
+        response.headers.get("content-type");
+
+      if (!contentType?.includes("application/json")) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create committee member.");
+        throw new Error(
+          data.error ||
+            "Failed to create committee member."
+        );
       }
 
       setForm(EMPTY_FORM);
       setImageFile(null);
-      setSuccess("Committee member added successfully.");
+
+      setSuccess(
+        "Committee member added successfully."
+      );
 
       await loadCommittees();
     } catch (error) {
-      console.error("CREATE_COMMITTEE_MEMBER_ERROR", error);
+      console.error(
+        "CREATE_COMMITTEE_MEMBER_ERROR",
+        error
+      );
 
       setError(
         error instanceof Error
@@ -224,14 +283,20 @@ export default function ManageCommitteesPanel() {
             <select
               value={selectedCommitteeId}
               onChange={(event) => {
-                setSelectedCommitteeId(event.target.value);
+                setSelectedCommitteeId(
+                  event.target.value
+                );
+
                 setError("");
                 setSuccess("");
               }}
               className="w-full rounded-xl border border-white/10 bg-[#082f29] px-4 py-3 text-sm text-white outline-none transition focus:border-[#00c896]"
             >
               {committees.map((committee) => (
-                <option key={committee.id} value={committee.id}>
+                <option
+                  key={committee.id}
+                  value={committee.id}
+                >
                   {committee.name}
                 </option>
               ))}
@@ -240,6 +305,7 @@ export default function ManageCommitteesPanel() {
         </div>
       </section>
 
+      {/* Error */}
       {error && (
         <div className="flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           <AlertCircle className="h-5 w-5 shrink-0" />
@@ -247,6 +313,7 @@ export default function ManageCommitteesPanel() {
         </div>
       )}
 
+      {/* Success */}
       {success && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -254,7 +321,7 @@ export default function ManageCommitteesPanel() {
         </div>
       )}
 
-      {/* Create */}
+      {/* Add member */}
       <section className="rounded-[24px] border border-white/[0.12] bg-black/20 p-5 backdrop-blur-xl md:p-6">
         <div className="mb-5">
           <h2 className="flex items-center gap-2 text-lg font-bold text-white">
@@ -276,14 +343,18 @@ export default function ManageCommitteesPanel() {
           <AdminInput
             label="Name"
             value={form.name}
-            onChange={(value) => updateForm("name", value)}
+            onChange={(value) =>
+              updateForm("name", value)
+            }
             required
           />
 
           <AdminInput
             label="Title"
             value={form.title}
-            onChange={(value) => updateForm("title", value)}
+            onChange={(value) =>
+              updateForm("title", value)
+            }
             placeholder="President, Member, Vice President..."
             required
           />
@@ -292,14 +363,19 @@ export default function ManageCommitteesPanel() {
             label="Order"
             type="number"
             value={form.order}
-            onChange={(value) => updateForm("order", value)}
+            onChange={(value) =>
+              updateForm("order", value)
+            }
           />
 
+          {/* Optional image */}
           <label className="flex min-h-[74px] cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.04] px-4 text-sm text-white/60 transition hover:border-[#00c896]/50 hover:text-white">
-            <ImagePlus className="h-5 w-5" />
+            <ImagePlus className="h-5 w-5 shrink-0" />
 
             <span className="truncate">
-              {imageFile ? imageFile.name : "Choose member image"}
+              {imageFile
+                ? imageFile.name
+                : "Choose image (optional)"}
             </span>
 
             <input
@@ -307,27 +383,44 @@ export default function ManageCommitteesPanel() {
               accept="image/png,image/jpeg,image/webp"
               className="hidden"
               onChange={(event) =>
-                setImageFile(event.target.files?.[0] ?? null)
+                setImageFile(
+                  event.target.files?.[0] ??
+                    null
+                )
               }
             />
           </label>
+
+          <div className="md:col-span-2">
+            <p className="text-xs text-white/35">
+              If no image is selected,
+              /images/defaultPerson.png will be used automatically.
+            </p>
+          </div>
 
           <label className="flex items-center gap-3 text-sm text-white/70">
             <input
               type="checkbox"
               checked={form.published}
               onChange={(event) =>
-                updateForm("published", event.target.checked)
+                updateForm(
+                  "published",
+                  event.target.checked
+                )
               }
               className="h-4 w-4 accent-[#00c896]"
             />
+
             Published
           </label>
 
           <div className="flex justify-end md:col-span-2">
             <button
               type="submit"
-              disabled={creating || !selectedCommitteeId}
+              disabled={
+                creating ||
+                !selectedCommitteeId
+              }
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00c896] to-[#008f6a] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {creating ? (
@@ -342,30 +435,36 @@ export default function ManageCommitteesPanel() {
         </form>
       </section>
 
-      {/* Members */}
+      {/* Existing members */}
       <section className="rounded-[24px] border border-white/[0.12] bg-black/20 p-5 backdrop-blur-xl md:p-6">
         {loading ? (
           <div className="flex min-h-[200px] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-[#00dba3]" />
           </div>
         ) : selectedCommittee &&
-          selectedCommittee.members.length > 0 ? (
+          selectedCommittee.members.length >
+            0 ? (
           <div className="grid gap-4 lg:grid-cols-2">
-            {selectedCommittee.members.map((member) => (
-              <CommitteeMemberEditor
-                key={member.id}
-                member={member}
-                onChanged={async (message) => {
-                  setSuccess(message);
-                  setError("");
-                  await loadCommittees();
-                }}
-                onError={(message) => {
-                  setError(message);
-                  setSuccess("");
-                }}
-              />
-            ))}
+            {selectedCommittee.members.map(
+              (member) => (
+                <CommitteeMemberEditor
+                  key={member.id}
+                  member={member}
+                  onChanged={async (
+                    message
+                  ) => {
+                    setSuccess(message);
+                    setError("");
+
+                    await loadCommittees();
+                  }}
+                  onError={(message) => {
+                    setError(message);
+                    setSuccess("");
+                  }}
+                />
+              )
+            )}
           </div>
         ) : (
           <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
@@ -391,24 +490,52 @@ function CommitteeMemberEditor({
   onError,
 }: {
   member: CommitteeMember;
-  onChanged: (message: string) => Promise<void>;
-  onError: (message: string) => void;
+  onChanged: (
+    message: string
+  ) => Promise<void>;
+  onError: (
+    message: string
+  ) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] =
+    useState(false);
 
-  const [name, setName] = useState(member.name);
-  const [title, setTitle] = useState(member.title);
-  const [order, setOrder] = useState(String(member.order));
-  const [published, setPublished] = useState(member.published);
-  const [image, setImage] = useState<File | null>(null);
+  const [saving, setSaving] =
+    useState(false);
+
+  const [deleting, setDeleting] =
+    useState(false);
+
+  const [name, setName] =
+    useState(member.name);
+
+  const [title, setTitle] =
+    useState(member.title);
+
+  const [order, setOrder] =
+    useState(
+      String(member.order)
+    );
+
+  const [
+    published,
+    setPublished,
+  ] = useState(
+    member.published
+  );
+
+  const [image, setImage] =
+    useState<File | null>(null);
 
   function cancelEditing() {
     setName(member.name);
     setTitle(member.title);
-    setOrder(String(member.order));
-    setPublished(member.published);
+    setOrder(
+      String(member.order)
+    );
+    setPublished(
+      member.published
+    );
     setImage(null);
     setEditing(false);
   }
@@ -417,38 +544,84 @@ function CommitteeMemberEditor({
     try {
       setSaving(true);
 
-      const formData = new FormData();
+      const formData =
+        new FormData();
 
-      formData.set("name", name);
-      formData.set("title", title);
-      formData.set("order", order);
-      formData.set("published", String(published));
-
-      if (image) {
-        formData.set("image", image);
-      }
-
-      const response = await fetch(
-        `/api/admin/committees/members/${member.id}`,
-        {
-          method: "PATCH",
-          body: formData,
-        }
+      formData.set(
+        "name",
+        name
       );
 
-      const data = await response.json();
+      formData.set(
+        "title",
+        title
+      );
+
+      formData.set(
+        "order",
+        order
+      );
+
+      formData.set(
+        "published",
+        String(published)
+      );
+
+      /*
+       * Replacing image is optional.
+       */
+      if (image) {
+        formData.set(
+          "image",
+          image
+        );
+      }
+
+      const response =
+        await fetch(
+          `/api/admin/committees/members/${member.id}`,
+          {
+            method: "PATCH",
+            body: formData,
+          }
+        );
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update member.");
+        throw new Error(
+          data.error ||
+            "Failed to update member."
+        );
       }
 
       setEditing(false);
       setImage(null);
 
-      await onChanged("Committee member updated successfully.");
+      await onChanged(
+        "Committee member updated successfully."
+      );
     } catch (error) {
       onError(
-        error instanceof Error ? error.message : "Failed to update member."
+        error instanceof Error
+          ? error.message
+          : "Failed to update member."
       );
     } finally {
       setSaving(false);
@@ -456,9 +629,10 @@ function CommitteeMemberEditor({
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Delete ${member.name}? This action cannot be undone.`
-    );
+    const confirmed =
+      window.confirm(
+        `Delete ${member.name}? This action cannot be undone.`
+      );
 
     if (!confirmed) {
       return;
@@ -467,23 +641,47 @@ function CommitteeMemberEditor({
     try {
       setDeleting(true);
 
-      const response = await fetch(
-        `/api/admin/committees/members/${member.id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response =
+        await fetch(
+          `/api/admin/committees/members/${member.id}`,
+          {
+            method: "DELETE",
+          }
+        );
 
-      const data = await response.json();
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete member.");
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
       }
 
-      await onChanged("Committee member deleted successfully.");
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to delete member."
+        );
+      }
+
+      await onChanged(
+        "Committee member deleted successfully."
+      );
     } catch (error) {
       onError(
-        error instanceof Error ? error.message : "Failed to delete member."
+        error instanceof Error
+          ? error.message
+          : "Failed to delete member."
       );
     } finally {
       setDeleting(false);
@@ -495,7 +693,10 @@ function CommitteeMemberEditor({
       <div className="flex gap-4">
         <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/20">
           <Image
-            src={member.image}
+            src={
+              member.image ||
+              "/images/defaultPerson.png"
+            }
             alt={member.name}
             fill
             sizes="96px"
@@ -510,12 +711,23 @@ function CommitteeMemberEditor({
                 {member.name}
               </h3>
 
-              <p className="mt-1 text-sm text-[#00dba3]">{member.title}</p>
+              <p className="mt-1 text-sm text-[#00dba3]">
+                {member.title}
+              </p>
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/40">
-                <span>Order: {member.order}</span>
+                <span>
+                  Order:{" "}
+                  {member.order}
+                </span>
+
                 <span>•</span>
-                <span>{member.published ? "Published" : "Hidden"}</span>
+
+                <span>
+                  {member.published
+                    ? "Published"
+                    : "Hidden"}
+                </span>
               </div>
             </>
           ) : (
@@ -542,16 +754,26 @@ function CommitteeMemberEditor({
               />
 
               <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/15 px-3 py-2 text-xs text-white/60">
-                <ImagePlus className="h-4 w-4" />
+                <ImagePlus className="h-4 w-4 shrink-0" />
 
-                {image ? image.name : "Replace image"}
+                <span className="truncate">
+                  {image
+                    ? image.name
+                    : "Replace image (optional)"}
+                </span>
 
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   className="hidden"
-                  onChange={(event) =>
-                    setImage(event.target.files?.[0] ?? null)
+                  onChange={(
+                    event
+                  ) =>
+                    setImage(
+                      event.target
+                        .files?.[0] ??
+                        null
+                    )
                   }
                 />
               </label>
@@ -560,9 +782,15 @@ function CommitteeMemberEditor({
                 <input
                   type="checkbox"
                   checked={published}
-                  onChange={(event) => setPublished(event.target.checked)}
+                  onChange={(event) =>
+                    setPublished(
+                      event.target
+                        .checked
+                    )
+                  }
                   className="accent-[#00c896]"
                 />
+
                 Published
               </label>
             </div>
@@ -575,7 +803,9 @@ function CommitteeMemberEditor({
           <>
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={() =>
+                setEditing(true)
+              }
               className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.12]"
             >
               <Pencil className="h-4 w-4" />
@@ -585,7 +815,9 @@ function CommitteeMemberEditor({
             <button
               type="button"
               disabled={deleting}
-              onClick={handleDelete}
+              onClick={
+                handleDelete
+              }
               className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
             >
               {deleting ? (
@@ -601,7 +833,9 @@ function CommitteeMemberEditor({
           <>
             <button
               type="button"
-              onClick={cancelEditing}
+              onClick={
+                cancelEditing
+              }
               className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/70"
             >
               <X className="h-4 w-4" />
@@ -639,7 +873,9 @@ function AdminInput({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string
+  ) => void;
   type?: string;
   placeholder?: string;
   required?: boolean;
@@ -655,7 +891,16 @@ function AdminInput({
         value={value}
         required={required}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
+        min={
+          type === "number"
+            ? 0
+            : undefined
+        }
+        onChange={(event) =>
+          onChange(
+            event.target.value
+          )
+        }
         className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#00c896]"
       />
     </label>
