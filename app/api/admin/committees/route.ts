@@ -1,102 +1,184 @@
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import {
+  mkdir,
+  writeFile,
+} from "fs/promises";
 import { join } from "path";
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-function getRequiredString(formData: FormData, key: string) {
-  const value = formData.get(key);
+const DEFAULT_PERSON_IMAGE =
+  "/images/defaultPerson.png";
 
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${key} is required.`);
+function getRequiredString(
+  formData: FormData,
+  key: string
+) {
+  const value =
+    formData.get(key);
+
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0
+  ) {
+    throw new Error(
+      `${key} is required.`
+    );
   }
 
   return value.trim();
 }
 
-function getOrder(value: FormDataEntryValue | null) {
-  if (typeof value !== "string") {
+function getOrder(
+  value:
+    | FormDataEntryValue
+    | null
+) {
+  if (
+    typeof value !== "string"
+  ) {
     return 0;
   }
 
-  const parsed = Number.parseInt(value, 10);
+  const parsed =
+    Number.parseInt(
+      value,
+      10
+    );
 
-  return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  return Number.isNaN(
+    parsed
+  ) || parsed < 0
+    ? 0
+    : parsed;
 }
 
-function getPublished(formData: FormData) {
-  return formData.get("published") !== "false";
+function getPublished(
+  formData: FormData
+) {
+  return (
+    formData.get(
+      "published"
+    ) !== "false"
+  );
 }
 
-function getImageExtension(file: File) {
-  if (file.type === "image/png") {
+function getImageExtension(
+  file: File
+) {
+  if (
+    file.type ===
+    "image/png"
+  ) {
     return "png";
   }
 
-  if (file.type === "image/webp") {
+  if (
+    file.type ===
+    "image/webp"
+  ) {
     return "webp";
   }
 
   return "jpg";
 }
 
-async function saveCommitteeImage(file: File) {
+async function saveCommitteeImage(
+  file: File
+) {
   const allowedTypes = [
     "image/png",
     "image/jpeg",
     "image/webp",
   ];
 
-  const maxSize = 5 * 1024 * 1024;
+  const maxSize =
+    5 * 1024 * 1024;
 
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error("Only JPG, PNG, and WEBP images are allowed.");
+  if (
+    !allowedTypes.includes(
+      file.type
+    )
+  ) {
+    throw new Error(
+      "Only JPG, PNG, and WEBP images are allowed."
+    );
   }
 
-  if (file.size > maxSize) {
-    throw new Error("Image must be smaller than 5 MB.");
+  if (
+    file.size > maxSize
+  ) {
+    throw new Error(
+      "Image must be smaller than 5 MB."
+    );
   }
 
-  const extension = getImageExtension(file);
+  const extension =
+    getImageExtension(file);
 
-  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
+  const fileName =
+    `${Date.now()}-${randomUUID()}.${extension}`;
 
-  const uploadDirectory = join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "committees"
+  const uploadDirectory =
+    join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "committees"
+    );
+
+  await mkdir(
+    uploadDirectory,
+    {
+      recursive: true,
+    }
   );
 
-  await mkdir(uploadDirectory, {
-    recursive: true,
-  });
+  const filePath =
+    join(
+      uploadDirectory,
+      fileName
+    );
 
-  const filePath = join(uploadDirectory, fileName);
+  const buffer =
+    Buffer.from(
+      await file.arrayBuffer()
+    );
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  await writeFile(filePath, buffer);
+  await writeFile(
+    filePath,
+    buffer
+  );
 
   return `/uploads/committees/${fileName}`;
 }
 
+/* ═════════════════════════════════════
+   GET COMMITTEES
+═════════════════════════════════════ */
+
 export async function GET() {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session =
+      await auth.api.getSession({
+        headers:
+          await headers(),
+      });
 
     if (!session) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized",
+          error:
+            "Unauthorized",
         },
         {
           status: 401,
@@ -104,51 +186,60 @@ export async function GET() {
       );
     }
 
-    const committees = await prisma.committee.findMany({
-      orderBy: [
+    const committees =
+      await prisma.committee.findMany(
         {
-          order: "asc",
-        },
-        {
-          createdAt: "asc",
-        },
-      ],
-
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        description: true,
-        published: true,
-        order: true,
-
-        members: {
           orderBy: [
             {
               order: "asc",
             },
             {
-              createdAt: "asc",
+              createdAt:
+                "asc",
             },
           ],
 
           select: {
             id: true,
+            slug: true,
             name: true,
-            title: true,
-            image: true,
+            description: true,
             published: true,
             order: true,
+
+            members: {
+              orderBy: [
+                {
+                  order:
+                    "asc",
+                },
+                {
+                  createdAt:
+                    "asc",
+                },
+              ],
+
+              select: {
+                id: true,
+                name: true,
+                title: true,
+                image: true,
+                published:
+                  true,
+                order: true,
+              },
+            },
           },
-        },
-      },
-    });
+        }
+      );
 
     return NextResponse.json({
       success: true,
       committees,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     console.error(
       "GET_ADMIN_COMMITTEES_ERROR",
       error
@@ -157,7 +248,8 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch committees.",
+        error:
+          "Failed to fetch committees.",
       },
       {
         status: 500,
@@ -166,17 +258,26 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+/* ═════════════════════════════════════
+   CREATE MEMBER
+═════════════════════════════════════ */
+
+export async function POST(
+  request: NextRequest
+) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session =
+      await auth.api.getSession({
+        headers:
+          await headers(),
+      });
 
     if (!session) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized",
+          error:
+            "Unauthorized",
         },
         {
           status: 401,
@@ -184,52 +285,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const formData = await request.formData();
+    const formData =
+      await request.formData();
 
-    const committeeId = getRequiredString(
-      formData,
-      "committeeId"
-    );
+    const committeeId =
+      getRequiredString(
+        formData,
+        "committeeId"
+      );
 
-    const name = getRequiredString(
-      formData,
-      "name"
-    );
+    const name =
+      getRequiredString(
+        formData,
+        "name"
+      );
 
-    const title = getRequiredString(
-      formData,
-      "title"
-    );
+    const title =
+      getRequiredString(
+        formData,
+        "title"
+      );
 
-    const imageValue = formData.get("image");
-
-    if (!(imageValue instanceof File) || imageValue.size === 0) {
-      return NextResponse.json(
+    /*
+     * Make sure committee exists.
+     */
+    const committee =
+      await prisma.committee.findUnique(
         {
-          success: false,
-          error: "Member image is required.",
-        },
-        {
-          status: 400,
+          where: {
+            id: committeeId,
+          },
+
+          select: {
+            id: true,
+          },
         }
       );
-    }
-
-    const committee = await prisma.committee.findUnique({
-      where: {
-        id: committeeId,
-      },
-
-      select: {
-        id: true,
-      },
-    });
 
     if (!committee) {
       return NextResponse.json(
         {
           success: false,
-          error: "Committee not found.",
+          error:
+            "Committee not found.",
         },
         {
           status: 404,
@@ -237,28 +335,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const image = await saveCommitteeImage(imageValue);
+    /*
+     * DEFAULT IMAGE.
+     *
+     * No uploaded image is required.
+     */
+    let image =
+      DEFAULT_PERSON_IMAGE;
 
-    const member = await prisma.committeeMember.create({
-      data: {
-        committeeId,
-        name,
-        title,
-        image,
-        order: getOrder(formData.get("order")),
-        published: getPublished(formData),
-      },
+    const imageValue =
+      formData.get("image");
 
-      select: {
-        id: true,
-        name: true,
-        title: true,
-        image: true,
-        published: true,
-        order: true,
-        committeeId: true,
-      },
-    });
+    /*
+     * Only save an uploaded file if
+     * one was actually supplied.
+     */
+    if (
+      imageValue instanceof
+        File &&
+      imageValue.size > 0
+    ) {
+      image =
+        await saveCommitteeImage(
+          imageValue
+        );
+    }
+
+    const member =
+      await prisma.committeeMember.create(
+        {
+          data: {
+            committeeId,
+            name,
+            title,
+            image,
+
+            order:
+              getOrder(
+                formData.get(
+                  "order"
+                )
+              ),
+
+            published:
+              getPublished(
+                formData
+              ),
+          },
+
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            image: true,
+            published: true,
+            order: true,
+            committeeId:
+              true,
+          },
+        }
+      );
 
     return NextResponse.json(
       {
@@ -269,7 +405,9 @@ export async function POST(request: NextRequest) {
         status: 201,
       }
     );
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     console.error(
       "CREATE_COMMITTEE_MEMBER_ERROR",
       error
@@ -278,8 +416,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
+
         error:
-          error instanceof Error
+          error instanceof
+          Error
             ? error.message
             : "Failed to create committee member.",
       },

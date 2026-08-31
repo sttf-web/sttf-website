@@ -13,7 +13,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const DEFAULT_PERSON_IMAGE = "/images/defaultPerson.png";
+const DEFAULT_PERSON_IMAGE =
+  "/images/defaultPerson.png";
 
 type RouteContext = {
   params: Promise<{
@@ -25,32 +26,41 @@ function getRequiredString(
   formData: FormData,
   key: string
 ) {
-  const value = formData.get(key);
+  const value =
+    formData.get(key);
 
   if (
     typeof value !== "string" ||
     value.trim().length === 0
   ) {
-    throw new Error(`${key} is required.`);
+    throw new Error(
+      `${key} is required.`
+    );
   }
 
   return value.trim();
 }
 
 function getOrder(
-  value: FormDataEntryValue | null
+  value:
+    | FormDataEntryValue
+    | null
 ) {
-  if (typeof value !== "string") {
+  if (
+    typeof value !== "string"
+  ) {
     return 0;
   }
 
-  const parsed = Number.parseInt(
-    value,
-    10
-  );
+  const parsed =
+    Number.parseInt(
+      value,
+      10
+    );
 
-  return Number.isNaN(parsed) ||
-    parsed < 0
+  return Number.isNaN(
+    parsed
+  ) || parsed < 0
     ? 0
     : parsed;
 }
@@ -59,19 +69,26 @@ function getPublished(
   formData: FormData
 ) {
   return (
-    formData.get("published") !==
-    "false"
+    formData.get(
+      "published"
+    ) !== "false"
   );
 }
 
 function getImageExtension(
   file: File
 ) {
-  if (file.type === "image/png") {
+  if (
+    file.type ===
+    "image/png"
+  ) {
     return "png";
   }
 
-  if (file.type === "image/webp") {
+  if (
+    file.type ===
+    "image/webp"
+  ) {
     return "webp";
   }
 
@@ -100,7 +117,9 @@ async function saveCommitteeImage(
     );
   }
 
-  if (file.size > maxSize) {
+  if (
+    file.size > maxSize
+  ) {
     throw new Error(
       "Image must be smaller than 5 MB."
     );
@@ -112,12 +131,13 @@ async function saveCommitteeImage(
   const fileName =
     `${Date.now()}-${randomUUID()}.${extension}`;
 
-  const uploadDirectory = join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "committees"
-  );
+  const uploadDirectory =
+    join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "committees"
+    );
 
   await mkdir(
     uploadDirectory,
@@ -126,14 +146,16 @@ async function saveCommitteeImage(
     }
   );
 
-  const filePath = join(
-    uploadDirectory,
-    fileName
-  );
+  const filePath =
+    join(
+      uploadDirectory,
+      fileName
+    );
 
-  const buffer = Buffer.from(
-    await file.arrayBuffer()
-  );
+  const buffer =
+    Buffer.from(
+      await file.arrayBuffer()
+    );
 
   await writeFile(
     filePath,
@@ -147,13 +169,12 @@ async function deleteLocalImage(
   image: string
 ) {
   /*
-   * Only delete uploaded committee images.
+   * Only delete custom uploaded
+   * committee images.
    *
-   * This means:
+   * This deliberately ignores:
    *
    * /images/defaultPerson.png
-   *
-   * can NEVER accidentally be deleted.
    */
   if (
     !image.startsWith(
@@ -165,24 +186,35 @@ async function deleteLocalImage(
 
   try {
     const relativePath =
-      image.replace(/^\/+/, "");
+      image.replace(
+        /^\/+/,
+        ""
+      );
 
-    const filePath = join(
-      process.cwd(),
-      "public",
-      relativePath
-    );
+    const filePath =
+      join(
+        process.cwd(),
+        "public",
+        relativePath
+      );
 
     await unlink(filePath);
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     const code =
-      typeof error === "object" &&
+      typeof error ===
+        "object" &&
       error !== null &&
       "code" in error
-        ? String(error.code)
+        ? String(
+            error.code
+          )
         : null;
 
-    if (code !== "ENOENT") {
+    if (
+      code !== "ENOENT"
+    ) {
       console.error(
         "DELETE_COMMITTEE_IMAGE_ERROR",
         error
@@ -202,14 +234,16 @@ export async function PATCH(
   try {
     const session =
       await auth.api.getSession({
-        headers: await headers(),
+        headers:
+          await headers(),
       });
 
     if (!session) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized",
+          error:
+            "Unauthorized",
         },
         {
           status: 401,
@@ -221,18 +255,22 @@ export async function PATCH(
       await context.params;
 
     const existingMember =
-      await prisma.committeeMember.findUnique({
-        where: {
-          id,
-        },
+      await prisma.committeeMember.findUnique(
+        {
+          where: {
+            id,
+          },
 
-        select: {
-          id: true,
-          image: true,
-        },
-      });
+          select: {
+            id: true,
+            image: true,
+          },
+        }
+      );
 
-    if (!existingMember) {
+    if (
+      !existingMember
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -260,29 +298,29 @@ export async function PATCH(
         "title"
       );
 
-    const imageValue =
-      formData.get("image");
-
     /*
-     * Existing image is used first.
+     * Preserve the current image.
      *
-     * If for any reason it is empty,
-     * use the default person image.
+     * If the current database value
+     * is somehow blank, use the default.
      */
     let image =
       existingMember.image?.trim()
         ? existingMember.image
         : DEFAULT_PERSON_IMAGE;
 
+    const imageValue =
+      formData.get("image");
+
     let newImageUploaded =
       false;
 
     /*
-     * If the user uploaded a new image,
-     * replace the current/default image.
+     * Image replacement is optional.
      */
     if (
-      imageValue instanceof File &&
+      imageValue instanceof
+        File &&
       imageValue.size > 0
     ) {
       image =
@@ -290,51 +328,57 @@ export async function PATCH(
           imageValue
         );
 
-      newImageUploaded = true;
+      newImageUploaded =
+        true;
     }
 
     const member =
-      await prisma.committeeMember.update({
-        where: {
-          id,
-        },
+      await prisma.committeeMember.update(
+        {
+          where: {
+            id,
+          },
 
-        data: {
-          name,
-          title,
-          image,
+          data: {
+            name,
+            title,
+            image,
 
-          order: getOrder(
-            formData.get("order")
-          ),
+            order:
+              getOrder(
+                formData.get(
+                  "order"
+                )
+              ),
 
-          published:
-            getPublished(formData),
-        },
+            published:
+              getPublished(
+                formData
+              ),
+          },
 
-        select: {
-          id: true,
-          name: true,
-          title: true,
-          image: true,
-          published: true,
-          order: true,
-          committeeId: true,
-        },
-      });
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            image: true,
+            published: true,
+            order: true,
+            committeeId:
+              true,
+          },
+        }
+      );
 
     /*
-     * If a new image was uploaded,
-     * remove the previous uploaded image.
-     *
-     * The defaultPerson image will never
-     * be deleted because deleteLocalImage()
-     * only handles /uploads/committees/.
+     * Delete old custom upload only
+     * after the database update succeeds.
      */
     if (
       newImageUploaded &&
       existingMember.image &&
-      existingMember.image !== image
+      existingMember.image !==
+        image
     ) {
       await deleteLocalImage(
         existingMember.image
@@ -345,7 +389,9 @@ export async function PATCH(
       success: true,
       member,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     console.error(
       "UPDATE_COMMITTEE_MEMBER_ERROR",
       error
@@ -356,7 +402,8 @@ export async function PATCH(
         success: false,
 
         error:
-          error instanceof Error
+          error instanceof
+          Error
             ? error.message
             : "Failed to update committee member.",
       },
@@ -378,14 +425,16 @@ export async function DELETE(
   try {
     const session =
       await auth.api.getSession({
-        headers: await headers(),
+        headers:
+          await headers(),
       });
 
     if (!session) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized",
+          error:
+            "Unauthorized",
         },
         {
           status: 401,
@@ -397,17 +446,19 @@ export async function DELETE(
       await context.params;
 
     const member =
-      await prisma.committeeMember.findUnique({
-        where: {
-          id,
-        },
+      await prisma.committeeMember.findUnique(
+        {
+          where: {
+            id,
+          },
 
-        select: {
-          id: true,
-          name: true,
-          image: true,
-        },
-      });
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        }
+      );
 
     if (!member) {
       return NextResponse.json(
@@ -422,17 +473,20 @@ export async function DELETE(
       );
     }
 
-    await prisma.committeeMember.delete({
-      where: {
-        id,
-      },
-    });
+    await prisma.committeeMember.delete(
+      {
+        where: {
+          id,
+        },
+      }
+    );
 
     /*
-     * This only deletes uploaded files.
+     * This function only deletes files
+     * from /uploads/committees/.
      *
-     * /images/defaultPerson.png
-     * remains untouched.
+     * Therefore defaultPerson.png is
+     * never deleted.
      */
     if (member.image) {
       await deleteLocalImage(
@@ -448,7 +502,9 @@ export async function DELETE(
         name: member.name,
       },
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     console.error(
       "DELETE_COMMITTEE_MEMBER_ERROR",
       error
@@ -459,7 +515,8 @@ export async function DELETE(
         success: false,
 
         error:
-          error instanceof Error
+          error instanceof
+          Error
             ? error.message
             : "Failed to delete committee member.",
       },
