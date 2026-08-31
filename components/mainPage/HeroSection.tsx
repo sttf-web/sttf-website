@@ -73,7 +73,7 @@ export default function HeroMain() {
                 md:px-8 md:text-xl
               "
             >
-              أنضم للأبطال
+             اتصل بنا
             </button>
 
             {/* Down arrows directly underneath button */}

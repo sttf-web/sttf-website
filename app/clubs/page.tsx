@@ -87,7 +87,7 @@ export default function ClubsPage() {
 
             <div className="relative h-12 w-12">
               <Building2 className="absolute inset-0 h-12 w-12 text-white" />
-              <span className="absolute bottom-1 right-0 h-3 w-8 bg-[#5ed487]" />
+
             </div>
           </div>
 

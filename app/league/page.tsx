@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
+  ChevronDown,
+  ChevronLeft,
   Loader2,
   Shield,
-  Trophy,
-  TrendingUp,
-  ChevronLeft,
 } from "lucide-react";
 
 type LeagueStanding = {
@@ -26,12 +26,82 @@ type LeagueStanding = {
   points: number;
   form: string[];
   position: number;
+
+  /*
+   * The API should return the season for every standing.
+   *
+   * Examples:
+   * "2025/2026"
+   * "2024/2025"
+   */
+  season: string;
 };
 
+function seasonToUrlValue(season: string) {
+  return season.replace("/", "-");
+}
+
+function urlValueToSeason(value: string) {
+  return value.replace("-", "/");
+}
+
+function compareSeasons(a: string, b: string) {
+  const getStartYear = (season: string) => {
+    const firstYear = season.split("/")[0];
+    return Number.parseInt(firstYear, 10) || 0;
+  };
+
+  return getStartYear(b) - getStartYear(a);
+}
+
 export default function LeaguePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [standings, setStandings] = useState<LeagueStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const seasonParam = searchParams.get("season");
+
+  const seasons = useMemo(() => {
+    return Array.from(
+      new Set(
+        standings
+          .map((standing) => standing.season)
+          .filter(
+            (season): season is string =>
+              typeof season === "string" && season.length > 0
+          )
+      )
+    ).sort(compareSeasons);
+  }, [standings]);
+
+  /*
+   * If a season exists in the URL use it.
+   *
+   * Otherwise use the newest season returned by the API.
+   */
+  const selectedSeason = useMemo(() => {
+    if (seasonParam) {
+      return urlValueToSeason(seasonParam);
+    }
+
+    return seasons[0] ?? "";
+  }, [seasonParam, seasons]);
+
+  /*
+   * Only standings belonging to the selected season are rendered.
+   */
+  const selectedStandings = useMemo(() => {
+    if (!selectedSeason) {
+      return [];
+    }
+
+    return standings.filter(
+      (standing) => standing.season === selectedSeason
+    );
+  }, [standings, selectedSeason]);
 
   useEffect(() => {
     async function fetchLeagueStandings() {
@@ -44,13 +114,27 @@ export default function LeaguePage() {
           cache: "no-store",
         });
 
+        const contentType = res.headers.get("content-type");
+
+        if (!contentType?.includes("application/json")) {
+          throw new Error(
+            "The league API returned an invalid response."
+          );
+        }
+
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || "Failed to fetch league standings");
+          throw new Error(
+            data.error || "Failed to fetch league standings"
+          );
         }
 
-        setStandings(data.standings || []);
+        setStandings(
+          Array.isArray(data.standings)
+            ? data.standings
+            : []
+        );
       } catch (error) {
         setError(
           error instanceof Error
@@ -65,9 +149,61 @@ export default function LeaguePage() {
     fetchLeagueStandings();
   }, []);
 
-  return (
-    <main dir="rtl" className="min-h-screen bg-[#060d09] text-white">
+  /*
+   * Once the API has loaded, if there is no season in the URL,
+   * redirect to the newest season.
+   *
+   * Example:
+   * /league
+   *
+   * becomes:
+   *
+   * /league?season=2025-2026
+   */
+  useEffect(() => {
+    if (
+      loading ||
+      seasonParam ||
+      seasons.length === 0
+    ) {
+      return;
+    }
 
+    router.replace(
+      `/league?season=${encodeURIComponent(
+        seasonToUrlValue(seasons[0])
+      )}`,
+      {
+        scroll: false,
+      }
+    );
+  }, [
+    loading,
+    router,
+    seasonParam,
+    seasons,
+  ]);
+
+  function handleSeasonChange(
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) {
+    const season = event.target.value;
+
+    router.push(
+      `/league?season=${encodeURIComponent(
+        seasonToUrlValue(season)
+      )}`,
+      {
+        scroll: false,
+      }
+    );
+  }
+
+  return (
+    <main
+      dir="rtl"
+      className="min-h-screen bg-[#060d09] text-white"
+    >
       {/* ══ HERO ══ */}
       <section className="relative overflow-hidden bg-[#00704C] px-5 pb-16 pt-28">
         <div className="mx-auto flex max-w-5xl items-center justify-center">
@@ -81,95 +217,227 @@ export default function LeaguePage() {
           />
         </div>
       </section>
-{/* ══ BODY ══ */}
-<section className="relative mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
-  {/* Header */}
-  <div className="mb-6 flex items-center justify-center md:relative">
-    <h2 className="text-center text-4xl font-black text-white md:text-5xl">
-      جدول الترتيب
-    </h2>
 
-    <div className="mt-4 flex justify-center md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2">
-      <span className="rounded-md bg-[#22d866] px-12 py-2 text-sm font-black text-[#062314]">
-        2026 \ 2025
-      </span>
-    </div>
-  </div>
+      {/* ══ BODY ══ */}
+      <section className="relative mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-center justify-between gap-5 md:flex-row">
+          {/* Empty spacer on desktop */}
+          <div className="hidden min-w-[180px] md:block" />
 
-  {/* Loading */}
-  {loading && (
-    <div className="flex min-h-[320px] items-center justify-center">
-      <div className="flex items-center gap-3 text-sm font-medium text-white/50">
-        <Loader2 className="h-5 w-5 animate-spin text-[#1fd47a]" />
-        جاري تحميل جدول الترتيب…
-      </div>
-    </div>
-  )}
+          <h2 className="text-center text-4xl font-black text-white md:text-5xl">
+            جدول الترتيب
+          </h2>
 
-  {/* Error */}
-  {error && (
-    <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
-      <AlertCircle className="h-4 w-4 shrink-0" />
-      {error}
-    </div>
-  )}
+          {/* Season selector */}
+          {!loading && seasons.length > 0 ? (
+            <div className="relative min-w-[180px]">
+              <select
+                value={selectedSeason}
+                onChange={handleSeasonChange}
+                aria-label="اختر الموسم"
+                className="
+                  h-11 w-full cursor-pointer appearance-none
+                  rounded-lg border border-[#22d866]/30
+                  bg-[#22d866]
+                  px-5 pl-10
+                  text-center text-sm font-black
+                  text-[#062314]
+                  outline-none transition
+                  hover:bg-[#2be373]
+                  focus:ring-2 focus:ring-[#22d866]/40
+                "
+              >
+                {seasons.map((season) => (
+                  <option
+                    key={season}
+                    value={season}
+                  >
+                    {season}
+                  </option>
+                ))}
+              </select>
 
-  {/* Empty */}
-  {!loading && !error && standings.length === 0 && (
+              <ChevronDown
+                className="
+                  pointer-events-none absolute
+                  left-3 top-1/2 h-4 w-4
+                  -translate-y-1/2 text-[#062314]
+                "
+              />
+            </div>
+          ) : (
+            <div className="hidden min-w-[180px] md:block" />
+          )}
+        </div>
+
+        {/* Current season */}
+        {!loading && selectedSeason && (
+          <div className="mb-8 text-center">
+            <p className="text-sm font-medium text-white/40">
+              الموسم
+            </p>
+
+            <h3 className="mt-1 text-xl font-black text-[#22d866]">
+              {selectedSeason}
+            </h3>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex min-h-[320px] items-center justify-center">
+            <div className="flex items-center gap-3 text-sm font-medium text-white/50">
+              <Loader2 className="h-5 w-5 animate-spin text-[#1fd47a]" />
+              جاري تحميل جدول الترتيب…
+            </div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* No seasons */}
+        {!loading &&
+          !error &&
+          seasons.length === 0 && (
+            <EmptyLeague />
+          )}
+
+        {/* Selected season has no standings */}
+        {!loading &&
+          !error &&
+          seasons.length > 0 &&
+          selectedStandings.length === 0 && (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 p-10 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <Shield className="h-7 w-7 text-white/25" />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-black text-white">
+                  لا يوجد ترتيب لهذا الموسم
+                </h3>
+
+                <p className="mt-1 max-w-md text-sm text-white/35">
+                  لا توجد بيانات ترتيب متاحة لموسم{" "}
+                  {selectedSeason}.
+                </p>
+              </div>
+            </div>
+          )}
+
+        {/* Selected season only */}
+        {!loading &&
+          !error &&
+          selectedStandings.length > 0 && (
+            <>
+              <DesktopLeagueTable
+                standings={selectedStandings}
+              />
+
+              <MobileLeagueCards
+                standings={selectedStandings}
+              />
+            </>
+          )}
+      </section>
+    </main>
+  );
+}
+
+/* ══ EMPTY STATE ══ */
+
+function EmptyLeague() {
+  return (
     <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 p-10 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-white/5">
         <Shield className="h-7 w-7 text-white/25" />
       </div>
 
       <div>
-        <h3 className="text-xl font-black text-white">لا يوجد ترتيب حالياً</h3>
+        <h3 className="text-xl font-black text-white">
+          لا يوجد ترتيب حالياً
+        </h3>
+
         <p className="mt-1 max-w-md text-sm text-white/35">
-          سيتم تحديث جدول الترتيب تلقائياً عند إضافة مباريات منتهية من لوحة التحكم.
+          سيتم تحديث جدول الترتيب تلقائياً عند إضافة مباريات
+          منتهية من لوحة التحكم.
         </p>
       </div>
     </div>
-  )}
-
-  {/* Tables */}
-  {!loading && !error && standings.length > 0 && (
-    <>
-      <DesktopLeagueTable standings={standings} />
-      <MobileLeagueCards standings={standings} />
-    </>
-  )}
-</section>
-    </main>
   );
 }
 
 /* ══ DESKTOP TABLE ══ */
-function DesktopLeagueTable({ standings }: { standings: LeagueStanding[] }) {
+
+function DesktopLeagueTable({
+  standings,
+}: {
+  standings: LeagueStanding[];
+}) {
   return (
     <div className="hidden md:block">
       {/* Header row */}
       <div className="grid grid-cols-[1fr_1.3fr_repeat(5,1fr)_1.3fr_44px] items-center rounded-xl bg-[#07944f] px-6 py-5 text-sm font-black text-white">
-        <div className="text-center">المستوى</div>
-        <div className="text-center">النادي</div>
-        <div className="text-center">لعب</div>
-        <div className="text-center">فوز</div>
-        <div className="text-center">خسارة</div>
-        <div className="text-center">+/-</div>
-        <div className="text-center">النقاط</div>
-        <div className="text-center">الشكل</div>
+        <div className="text-center">
+          المستوى
+        </div>
+
+        <div className="text-center">
+          النادي
+        </div>
+
+        <div className="text-center">
+          لعب
+        </div>
+
+        <div className="text-center">
+          فوز
+        </div>
+
+        <div className="text-center">
+          خسارة
+        </div>
+
+        <div className="text-center">
+          +/-
+        </div>
+
+        <div className="text-center">
+          النقاط
+        </div>
+
+        <div className="text-center">
+          الشكل
+        </div>
+
         <div />
       </div>
 
       {/* Rows */}
       <div className="mt-8 space-y-6">
-        {standings.map((standing, i) => (
-          <LeagueRow key={standing.id} standing={standing} index={i} />
-        ))}
+        {standings.map(
+          (standing, index) => (
+            <LeagueRow
+              key={standing.id}
+              standing={standing}
+              index={index}
+            />
+          )
+        )}
       </div>
     </div>
   );
 }
 
 /* ══ LEAGUE ROW ══ */
+
 function LeagueRow({
   standing,
   index,
@@ -177,7 +445,8 @@ function LeagueRow({
   standing: LeagueStanding;
   index: number;
 }) {
-  const isTopFour = standing.position <= 4;
+  const isTopFour =
+    standing.position <= 4;
 
   return (
     <Link
@@ -187,7 +456,9 @@ function LeagueRow({
           ? "border-[#18d96d] bg-[#003818] text-white"
           : "border-[#18d96d] bg-[#e9edf0] text-[#092419]"
       }`}
-      style={{ animationDelay: `${index * 40}ms` }}
+      style={{
+        animationDelay: `${index * 40}ms`,
+      }}
     >
       {/* Position */}
       <div className="text-center text-2xl font-black">
@@ -208,29 +479,54 @@ function LeagueRow({
           ) : (
             <Shield
               className={`h-7 w-7 ${
-                isTopFour ? "text-white/60" : "text-[#07944f]"
+                isTopFour
+                  ? "text-white/60"
+                  : "text-[#07944f]"
               }`}
             />
           )}
         </div>
       </div>
 
-      <TableNumber value={standing.matchesPlayed} isDark={isTopFour} />
-      <TableNumber value={standing.won} isDark={isTopFour} />
-      <TableNumber value={standing.lost} isDark={isTopFour} />
-      <TableNumber value={standing.score} isDark={isTopFour} />
-      <TableNumber value={standing.points} isDark={isTopFour} />
+      <TableNumber
+        value={standing.matchesPlayed}
+        isDark={isTopFour}
+      />
+
+      <TableNumber
+        value={standing.won}
+        isDark={isTopFour}
+      />
+
+      <TableNumber
+        value={standing.lost}
+        isDark={isTopFour}
+      />
+
+      <TableNumber
+        value={standing.score}
+        isDark={isTopFour}
+      />
+
+      <TableNumber
+        value={standing.points}
+        isDark={isTopFour}
+      />
 
       {/* Form */}
       <div className="flex items-center justify-center gap-1">
-        <FormDots form={standing.form} />
+        <FormDots
+          form={standing.form}
+        />
       </div>
 
       {/* Arrow */}
       <div className="flex justify-end">
         <ChevronLeft
           className={`h-6 w-6 ${
-            isTopFour ? "text-[#18d96d]" : "text-[#092419]"
+            isTopFour
+              ? "text-[#18d96d]"
+              : "text-[#092419]"
           }`}
         />
       </div>
@@ -248,7 +544,9 @@ function TableNumber({
   return (
     <div
       className={`text-center text-sm font-black ${
-        isDark ? "text-white" : "text-[#20c56c]"
+        isDark
+          ? "text-white"
+          : "text-[#20c56c]"
       }`}
     >
       {value}
@@ -257,11 +555,17 @@ function TableNumber({
 }
 
 /* ══ MOBILE CARDS ══ */
-function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
+
+function MobileLeagueCards({
+  standings,
+}: {
+  standings: LeagueStanding[];
+}) {
   return (
     <div className="space-y-4 md:hidden">
       {standings.map((standing) => {
-        const isTopFour = standing.position <= 4;
+        const isTopFour =
+          standing.position <= 4;
 
         return (
           <Link
@@ -274,7 +578,7 @@ function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
             }`}
           >
             <div className="mb-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span className="text-2xl font-black">
                   {standing.position}
                 </span>
@@ -291,47 +595,85 @@ function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
                   ) : (
                     <Shield
                       className={`h-7 w-7 ${
-                        isTopFour ? "text-white/60" : "text-[#07944f]"
+                        isTopFour
+                          ? "text-white/60"
+                          : "text-[#07944f]"
                       }`}
                     />
                   )}
                 </div>
 
-                <div>
-                  <h3 className="font-black">{standing.clubName}</h3>
+                <div className="min-w-0">
+                  <h3 className="truncate font-black">
+                    {standing.clubName}
+                  </h3>
+
                   {standing.clubLocation && (
                     <p
-                      className={`mt-0.5 text-xs ${
-                        isTopFour ? "text-white/50" : "text-black/50"
+                      className={`mt-0.5 truncate text-xs ${
+                        isTopFour
+                          ? "text-white/50"
+                          : "text-black/50"
                       }`}
                     >
-                      {standing.clubLocation}
+                      {
+                        standing.clubLocation
+                      }
                     </p>
                   )}
                 </div>
               </div>
 
               <ChevronLeft
-                className={`h-6 w-6 ${
-                  isTopFour ? "text-[#18d96d]" : "text-[#092419]"
+                className={`h-6 w-6 shrink-0 ${
+                  isTopFour
+                    ? "text-[#18d96d]"
+                    : "text-[#092419]"
                 }`}
               />
             </div>
 
             <div
               className={`grid grid-cols-5 gap-2 border-t pt-4 text-center ${
-                isTopFour ? "border-white/10" : "border-black/10"
+                isTopFour
+                  ? "border-white/10"
+                  : "border-black/10"
               }`}
             >
-              <MobileStat label="لعب" value={standing.matchesPlayed} />
-              <MobileStat label="فوز" value={standing.won} />
-              <MobileStat label="خسارة" value={standing.lost} />
-              <MobileStat label="+/-" value={standing.score} />
-              <MobileStat label="النقاط" value={standing.points} />
+              <MobileStat
+                label="لعب"
+                value={
+                  standing.matchesPlayed
+                }
+              />
+
+              <MobileStat
+                label="فوز"
+                value={standing.won}
+              />
+
+              <MobileStat
+                label="خسارة"
+                value={standing.lost}
+              />
+
+              <MobileStat
+                label="+/-"
+                value={standing.score}
+              />
+
+              <MobileStat
+                label="النقاط"
+                value={
+                  standing.points
+                }
+              />
             </div>
 
             <div className="mt-4 flex items-center justify-center gap-1">
-              <FormDots form={standing.form} />
+              <FormDots
+                form={standing.form}
+              />
             </div>
           </Link>
         );
@@ -341,6 +683,7 @@ function MobileLeagueCards({ standings }: { standings: LeagueStanding[] }) {
 }
 
 /* ══ MOBILE STAT ══ */
+
 function MobileStat({
   label,
   value,
@@ -350,43 +693,77 @@ function MobileStat({
 }) {
   return (
     <div>
-      <p className="text-base font-black">{value}</p>
-      <p className="mt-1 text-[11px] opacity-60">{label}</p>
+      <p className="text-base font-black">
+        {value}
+      </p>
+
+      <p className="mt-1 text-[11px] opacity-60">
+        {label}
+      </p>
     </div>
   );
 }
 
 /* ══ FORM DOTS ══ */
-function FormDots({ form }: { form: string[] }) {
-  const safeForm = form.length > 0 ? form.slice(0, 3) : [];
-  const padded = Array.from({ length: 3 }, (_, i) => safeForm[i] ?? "-");
 
-  if (padded.every((x) => x === "-")) {
-    return <span className="text-xs text-white/25">—</span>;
+function FormDots({
+  form,
+}: {
+  form: string[];
+}) {
+  const safeForm =
+    form.length > 0
+      ? form.slice(0, 3)
+      : [];
+
+  const padded = Array.from(
+    { length: 3 },
+    (_, index) =>
+      safeForm[index] ?? "-"
+  );
+
+  if (
+    padded.every(
+      (item) => item === "-"
+    )
+  ) {
+    return (
+      <span className="text-xs text-white/25">
+        —
+      </span>
+    );
   }
 
   return (
     <>
-      {padded.map((item, index) => {
-        const isWin = item === "W";
-        const isLoss = item === "L";
+      {padded.map(
+        (item, index) => {
+          const isWin =
+            item === "W";
 
-        return (
-          <span
-            key={`${item}-${index}`}
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ${
-              isWin
-                ? "bg-[#07944f]"
+          const isLoss =
+            item === "L";
+
+          return (
+            <span
+              key={`${item}-${index}`}
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ${
+                isWin
+                  ? "bg-[#07944f]"
+                  : isLoss
+                    ? "bg-[#f0444d]"
+                    : "bg-white/20"
+              }`}
+            >
+              {isWin
+                ? "W"
                 : isLoss
-                  ? "bg-[#f0444d]"
-                  : "bg-white/20"
-            }`}
-          >
-            {isWin ? "W" : isLoss ? "L" : ""}
-          </span>
-        );
-      })}
+                  ? "L"
+                  : ""}
+            </span>
+          );
+        }
+      )}
     </>
   );
 }
-

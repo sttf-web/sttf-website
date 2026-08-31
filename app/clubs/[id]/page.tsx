@@ -226,10 +226,10 @@ export default function ClubDetailsPage() {
         <div className="relative mx-auto mt-12 max-w-5xl px-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { label: "النقاط",      value: stats?.points ?? 0,  color: "text-orange-500" },
-              { label: "الانتصارات",  value: stats?.wins ?? 0,    color: "text-teal-500"   },
-              { label: "المباريات",   value: stats?.matches ?? 0, color: "text-blue-500"   },
-              { label: "اللاعبين",   value: stats?.players ?? 0, color: "text-violet-500" },
+              { label: "النقاط",      value: stats?.points ?? 0,  color: "text-green-500" },
+              { label: "الانتصارات",  value: stats?.wins ?? 0,    color: "text-green-500"   },
+              { label: "المباريات",   value: stats?.matches ?? 0, color: "text-green-500"   },
+              { label: "اللاعبين",   value: stats?.players ?? 0, color: "text-green-500" },
             ].map(({ label, value, color }) => (
               <div
                 key={label}

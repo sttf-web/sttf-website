@@ -3,24 +3,39 @@ import Link from "next/link";
 
 const socialLinks = [
   {
-    href: "#",
+    href: "https://www.instagram.com/sttf_ksa/?hl=en",
     label: "Instagram",
     icon: "/images/social1.png",
   },
   {
-    href: "#",
+    href: "https://www.linkedin.com/company/saudi-table-tennis-federation",
     label: "LinkedIn",
     icon: "/images/social2.png",
   },
   {
-    href: "#",
+    href: "https://x.com/sttf_ksa?lang=en",
     label: "X",
     icon: "/images/social3.png",
   },
   {
-    href: "#",
-    label: "WhatsApp",
-    icon: "/images/social4.png",
+    href: "https://www.youtube.com/channel/UCeaYi8vJ-7ci-xHJmeAttFw/videos",
+    label: "youtube",
+    icon: "/images/social5.png",
+  },
+  {
+    href: "https://www.tiktok.com/@sttfksa",
+    label: "tiktok",
+    icon: "/images/social6.png",
+  },
+  {
+    href: "https://www.snapchat.com/topic/saudi-table-tennis-federation-players",
+    label: "snapchat",
+    icon: "/images/social7.png",
+  },
+  {
+    href: "https://www.facebook.com/sttfksa/",
+    label: "facebook",
+    icon: "/images/social8.png",
   },
 ];
 
@@ -101,7 +116,10 @@ export default function Footer() {
             <p dir="ltr">info@sttf.sa</p>
           </div>
 
-          <div className="mt-5 flex items-center justify-center gap-3">
+          <div
+            dir="ltr"
+            className="mt-5 flex items-center justify-center gap-3"
+          >
             {socialLinks.map((social) => (
               <SocialLink
                 key={social.label}
