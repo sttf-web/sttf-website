@@ -7,14 +7,21 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(_req: Request, context: RouteContext) {
+export async function GET(
+  _req: Request,
+  context: RouteContext
+) {
   try {
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "Club ID is required" },
-        { status: 400 }
+        {
+          error: "Club ID is required",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
@@ -22,6 +29,7 @@ export async function GET(_req: Request, context: RouteContext) {
       where: {
         id,
       },
+
       select: {
         id: true,
         clubName: true,
@@ -42,6 +50,7 @@ export async function GET(_req: Request, context: RouteContext) {
               name: "asc",
             },
           ],
+
           select: {
             id: true,
             name: true,
@@ -58,12 +67,18 @@ export async function GET(_req: Request, context: RouteContext) {
           orderBy: {
             date: "desc",
           },
+
           select: {
             id: true,
+
+            season: true,
+
             clubOneScore: true,
             clubTwoScore: true,
+
             date: true,
             status: true,
+
             clubOne: {
               select: {
                 id: true,
@@ -71,6 +86,7 @@ export async function GET(_req: Request, context: RouteContext) {
                 logo: true,
               },
             },
+
             clubTwo: {
               select: {
                 id: true,
@@ -85,12 +101,18 @@ export async function GET(_req: Request, context: RouteContext) {
           orderBy: {
             date: "desc",
           },
+
           select: {
             id: true,
+
+            season: true,
+
             clubOneScore: true,
             clubTwoScore: true,
+
             date: true,
             status: true,
+
             clubOne: {
               select: {
                 id: true,
@@ -98,6 +120,7 @@ export async function GET(_req: Request, context: RouteContext) {
                 logo: true,
               },
             },
+
             clubTwo: {
               select: {
                 id: true,
@@ -108,11 +131,24 @@ export async function GET(_req: Request, context: RouteContext) {
           },
         },
 
-        leagueStanding: {
+        /*
+         * A club can now have multiple league standings,
+         * one for each season.
+         */
+        leagueStandings: {
+          orderBy: {
+            season: "desc",
+          },
+
           select: {
+            id: true,
+
+            season: true,
+
             matchesPlayed: true,
             won: true,
             lost: true,
+
             score: true,
             points: true,
             form: true,
@@ -131,17 +167,42 @@ export async function GET(_req: Request, context: RouteContext) {
 
     if (!club) {
       return NextResponse.json(
-        { error: "Club not found" },
-        { status: 404 }
+        {
+          error: "Club not found",
+        },
+        {
+          status: 404,
+        }
       );
     }
 
-    const matches = [...club.homeMatches, ...club.awayMatches].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    /*
+     * Merge home and away matches into one list.
+     */
+    const matches = [
+      ...club.homeMatches,
+      ...club.awayMatches,
+    ].sort(
+      (a, b) =>
+        new Date(b.date).getTime() -
+        new Date(a.date).getTime()
     );
+
+    /*
+     * Because leagueStandings is ordered newest season first,
+     * index 0 is the latest standing.
+     *
+     * This keeps compatibility with your existing frontend
+     * if it still expects:
+     *
+     * club.leagueStanding
+     */
+    const latestLeagueStanding =
+      club.leagueStandings[0] ?? null;
 
     return NextResponse.json({
       success: true,
+
       club: {
         id: club.id,
         clubName: club.clubName,
@@ -150,19 +211,53 @@ export async function GET(_req: Request, context: RouteContext) {
         manager: club.manager,
         phoneNumber: club.phoneNumber,
         logo: club.logo,
+
         players: club.players,
+
         matches,
-        leagueStanding: club.leagueStanding,
-        playersCount: club._count.players,
-        matchesCount: club._count.homeMatches + club._count.awayMatches,
+
+        /*
+         * Backwards-compatible singular value.
+         *
+         * Existing frontend can continue using:
+         *
+         * club.leagueStanding
+         */
+        leagueStanding:
+          latestLeagueStanding,
+
+        /*
+         * All historical seasons are also returned.
+         *
+         * You can use this later for a season selector:
+         *
+         * club.leagueStandings
+         */
+        leagueStandings:
+          club.leagueStandings,
+
+        playersCount:
+          club._count.players,
+
+        matchesCount:
+          club._count.homeMatches +
+          club._count.awayMatches,
       },
     });
-  } catch (error) {
-    console.error("GET_CLUB_DETAILS_ERROR", error);
+  } catch (error: unknown) {
+    console.error(
+      "GET_CLUB_DETAILS_ERROR",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Failed to fetch club details" },
-      { status: 500 }
+      {
+        error:
+          "Failed to fetch club details",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
