@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
-import {
-  mkdir,
-  unlink,
-  writeFile,
-} from "fs/promises";
-import { join } from "path";
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+import {
+  createClient,
+} from "@supabase/supabase-js";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,11 +16,24 @@ export const runtime = "nodejs";
 const DEFAULT_PERSON_IMAGE =
   "/images/defaultPerson.png";
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const IMAGES_BUCKET =
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET ||
+  "images";
+
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
+
+/* ═════════════════════════════════════
+   HELPERS
+═════════════════════════════════════ */
 
 function getRequiredString(
   formData: FormData,
@@ -47,7 +60,8 @@ function getOrder(
     | null
 ) {
   if (
-    typeof value !== "string"
+    typeof value !== "string" ||
+    value.trim().length === 0
   ) {
     return 0;
   }
@@ -58,11 +72,14 @@ function getOrder(
       10
     );
 
-  return Number.isNaN(
-    parsed
-  ) || parsed < 0
-    ? 0
-    : parsed;
+  if (
+    Number.isNaN(parsed) ||
+    parsed < 0
+  ) {
+    return 0;
+  }
+
+  return parsed;
 }
 
 function getPublished(
@@ -78,34 +95,48 @@ function getPublished(
 function getImageExtension(
   file: File
 ) {
+  const extension =
+    file.name
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+
   if (
-    file.type ===
-    "image/png"
+    extension === "jpg" ||
+    extension === "jpeg" ||
+    extension === "png" ||
+    extension === "webp"
   ) {
-    return "png";
+    return extension;
   }
 
   if (
-    file.type ===
-    "image/webp"
+    file.type === "image/jpeg"
+  ) {
+    return "jpg";
+  }
+
+  if (
+    file.type === "image/webp"
   ) {
     return "webp";
   }
 
-  return "jpg";
+  return "png";
 }
 
-async function saveCommitteeImage(
+/* ═════════════════════════════════════
+   UPLOAD IMAGE
+═════════════════════════════════════ */
+
+async function uploadCommitteeImage(
   file: File
 ) {
   const allowedTypes = [
-    "image/png",
     "image/jpeg",
+    "image/png",
     "image/webp",
   ];
-
-  const maxSize =
-    5 * 1024 * 1024;
 
   if (
     !allowedTypes.includes(
@@ -113,15 +144,18 @@ async function saveCommitteeImage(
     )
   ) {
     throw new Error(
-      "Only JPG, PNG, and WEBP images are allowed."
+      "Only JPG, PNG, or WEBP images are allowed."
     );
   }
+
+  const maxSize =
+    5 * 1024 * 1024;
 
   if (
     file.size > maxSize
   ) {
     throw new Error(
-      "Image must be smaller than 5 MB."
+      "Committee member image must be smaller than 5MB."
     );
   }
 
@@ -129,97 +163,162 @@ async function saveCommitteeImage(
     getImageExtension(file);
 
   const fileName =
-    `${Date.now()}-${randomUUID()}.${extension}`;
-
-  const uploadDirectory =
-    join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "committees"
-    );
-
-  await mkdir(
-    uploadDirectory,
-    {
-      recursive: true,
-    }
-  );
+    `${randomUUID()}.${extension}`;
 
   const filePath =
-    join(
-      uploadDirectory,
-      fileName
+    `committee-members/${fileName}`;
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  const {
+    data: uploadData,
+    error: uploadError,
+  } = await supabase.storage
+    .from(IMAGES_BUCKET)
+    .upload(
+      filePath,
+      arrayBuffer,
+      {
+        contentType:
+          file.type,
+        cacheControl:
+          "3600",
+        upsert: false,
+      }
     );
 
-  const buffer =
-    Buffer.from(
-      await file.arrayBuffer()
+  if (uploadError) {
+    console.error(
+      "SUPABASE_COMMITTEE_UPLOAD_ERROR",
+      uploadError
     );
 
-  await writeFile(
-    filePath,
-    buffer
-  );
+    throw new Error(
+      `Failed to upload committee image: ${uploadError.message}`
+    );
+  }
 
-  return `/uploads/committees/${fileName}`;
+  const { data } =
+    supabase.storage
+      .from(IMAGES_BUCKET)
+      .getPublicUrl(
+        uploadData.path
+      );
+
+  return data.publicUrl;
 }
 
-async function deleteLocalImage(
-  image: string
+/* ═════════════════════════════════════
+   EXTRACT SUPABASE STORAGE PATH
+═════════════════════════════════════ */
+
+function getSupabaseStoragePath(
+  imageUrl: string
 ) {
   /*
-   * Only delete custom uploaded
-   * committee images.
-   *
-   * This deliberately ignores:
+   * Local fallback:
    *
    * /images/defaultPerson.png
+   *
+   * should never be deleted from
+   * Supabase.
    */
   if (
-    !image.startsWith(
-      "/uploads/committees/"
+    imageUrl.startsWith("/")
+  ) {
+    return null;
+  }
+
+  try {
+    const url =
+      new URL(imageUrl);
+
+    const marker =
+      `/storage/v1/object/public/${IMAGES_BUCKET}/`;
+
+    const markerIndex =
+      url.pathname.indexOf(
+        marker
+      );
+
+    if (
+      markerIndex === -1
+    ) {
+      return null;
+    }
+
+    const storagePath =
+      url.pathname.slice(
+        markerIndex +
+          marker.length
+      );
+
+    return decodeURIComponent(
+      storagePath
+    );
+  } catch {
+    return null;
+  }
+}
+
+/* ═════════════════════════════════════
+   DELETE SUPABASE IMAGE
+═════════════════════════════════════ */
+
+async function deleteCommitteeImage(
+  imageUrl: string
+) {
+  if (
+    !imageUrl ||
+    imageUrl ===
+      DEFAULT_PERSON_IMAGE
+  ) {
+    return;
+  }
+
+  const storagePath =
+    getSupabaseStoragePath(
+      imageUrl
+    );
+
+  if (!storagePath) {
+    return;
+  }
+
+  /*
+   * Safety:
+   *
+   * Only delete images belonging to
+   * committee members.
+   */
+  if (
+    !storagePath.startsWith(
+      "committee-members/"
     )
   ) {
     return;
   }
 
-  try {
-    const relativePath =
-      image.replace(
-        /^\/+/,
-        ""
-      );
+  const {
+    error: deleteError,
+  } = await supabase.storage
+    .from(IMAGES_BUCKET)
+    .remove([
+      storagePath,
+    ]);
 
-    const filePath =
-      join(
-        process.cwd(),
-        "public",
-        relativePath
-      );
+  if (deleteError) {
+    console.error(
+      "SUPABASE_COMMITTEE_DELETE_ERROR",
+      deleteError
+    );
 
-    await unlink(filePath);
-  } catch (
-    error: unknown
-  ) {
-    const code =
-      typeof error ===
-        "object" &&
-      error !== null &&
-      "code" in error
-        ? String(
-            error.code
-          )
-        : null;
-
-    if (
-      code !== "ENOENT"
-    ) {
-      console.error(
-        "DELETE_COMMITTEE_IMAGE_ERROR",
-        error
-      );
-    }
+    /*
+     * We don't throw here because the
+     * database operation may already
+     * have succeeded.
+     */
   }
 }
 
@@ -228,7 +327,7 @@ async function deleteLocalImage(
 ═════════════════════════════════════ */
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   context: RouteContext
 ) {
   try {
@@ -255,18 +354,16 @@ export async function PATCH(
       await context.params;
 
     const existingMember =
-      await prisma.committeeMember.findUnique(
-        {
-          where: {
-            id,
-          },
+      await prisma.committeeMember.findUnique({
+        where: {
+          id,
+        },
 
-          select: {
-            id: true,
-            image: true,
-          },
-        }
-      );
+        select: {
+          id: true,
+          image: true,
+        },
+      });
 
     if (
       !existingMember
@@ -299,10 +396,11 @@ export async function PATCH(
       );
 
     /*
-     * Preserve the current image.
+     * Keep existing image unless
+     * a new file is uploaded.
      *
-     * If the current database value
-     * is somehow blank, use the default.
+     * If somehow the DB image is blank,
+     * fall back to defaultPerson.
      */
     let image =
       existingMember.image?.trim()
@@ -312,75 +410,69 @@ export async function PATCH(
     const imageValue =
       formData.get("image");
 
-    let newImageUploaded =
+    let imageWasReplaced =
       false;
 
-    /*
-     * Image replacement is optional.
-     */
     if (
-      imageValue instanceof
-        File &&
+      imageValue instanceof File &&
       imageValue.size > 0
     ) {
       image =
-        await saveCommitteeImage(
+        await uploadCommitteeImage(
           imageValue
         );
 
-      newImageUploaded =
+      imageWasReplaced =
         true;
     }
 
     const member =
-      await prisma.committeeMember.update(
-        {
-          where: {
-            id,
-          },
+      await prisma.committeeMember.update({
+        where: {
+          id,
+        },
 
-          data: {
-            name,
-            title,
-            image,
+        data: {
+          name,
+          title,
+          image,
 
-            order:
-              getOrder(
-                formData.get(
-                  "order"
-                )
-              ),
+          order: getOrder(
+            formData.get(
+              "order"
+            )
+          ),
 
-            published:
-              getPublished(
-                formData
-              ),
-          },
+          published:
+            getPublished(
+              formData
+            ),
+        },
 
-          select: {
-            id: true,
-            name: true,
-            title: true,
-            image: true,
-            published: true,
-            order: true,
-            committeeId:
-              true,
-          },
-        }
-      );
+        select: {
+          id: true,
+          name: true,
+          title: true,
+          image: true,
+          published: true,
+          order: true,
+          committeeId: true,
+        },
+      });
 
     /*
-     * Delete old custom upload only
-     * after the database update succeeds.
+     * Database update succeeded.
+     *
+     * We can now remove the old
+     * Supabase image.
      */
     if (
-      newImageUploaded &&
+      imageWasReplaced &&
       existingMember.image &&
       existingMember.image !==
         image
     ) {
-      await deleteLocalImage(
+      await deleteCommitteeImage(
         existingMember.image
       );
     }
@@ -419,7 +511,7 @@ export async function PATCH(
 ═════════════════════════════════════ */
 
 export async function DELETE(
-  _request: Request,
+  _request: NextRequest,
   context: RouteContext
 ) {
   try {
@@ -446,19 +538,17 @@ export async function DELETE(
       await context.params;
 
     const member =
-      await prisma.committeeMember.findUnique(
-        {
-          where: {
-            id,
-          },
+      await prisma.committeeMember.findUnique({
+        where: {
+          id,
+        },
 
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        }
-      );
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      });
 
     if (!member) {
       return NextResponse.json(
@@ -473,23 +563,24 @@ export async function DELETE(
       );
     }
 
-    await prisma.committeeMember.delete(
-      {
-        where: {
-          id,
-        },
-      }
-    );
+    /*
+     * Delete database record first.
+     */
+    await prisma.committeeMember.delete({
+      where: {
+        id,
+      },
+    });
 
     /*
-     * This function only deletes files
-     * from /uploads/committees/.
+     * Then clean up Supabase image.
      *
-     * Therefore defaultPerson.png is
-     * never deleted.
+     * This automatically ignores:
+     *
+     * /images/defaultPerson.png
      */
     if (member.image) {
-      await deleteLocalImage(
+      await deleteCommitteeImage(
         member.image
       );
     }
@@ -515,8 +606,7 @@ export async function DELETE(
         success: false,
 
         error:
-          error instanceof
-          Error
+          error instanceof Error
             ? error.message
             : "Failed to delete committee member.",
       },

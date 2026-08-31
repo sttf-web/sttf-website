@@ -1,107 +1,122 @@
 import { randomUUID } from "crypto";
-import {
-  mkdir,
-  writeFile,
-} from "fs/promises";
-import { join } from "path";
 import { headers } from "next/headers";
-import {
-  NextRequest,
-  NextResponse,
-} from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const DEFAULT_PERSON_IMAGE =
-  "/images/defaultPerson.png";
+const DEFAULT_PERSON_IMAGE = "/images/defaultPerson.png";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const IMAGES_BUCKET =
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
+
+/* ═════════════════════════════════════
+   HELPERS
+═════════════════════════════════════ */
 
 function getRequiredString(
   formData: FormData,
   key: string
 ) {
-  const value =
-    formData.get(key);
+  const value = formData.get(key);
 
   if (
     typeof value !== "string" ||
     value.trim().length === 0
   ) {
-    throw new Error(
-      `${key} is required.`
-    );
+    throw new Error(`${key} is required.`);
   }
 
   return value.trim();
 }
 
 function getOrder(
-  value:
-    | FormDataEntryValue
-    | null
+  value: FormDataEntryValue | null
 ) {
   if (
-    typeof value !== "string"
+    typeof value !== "string" ||
+    value.trim().length === 0
   ) {
     return 0;
   }
 
-  const parsed =
-    Number.parseInt(
-      value,
-      10
-    );
+  const parsed = Number.parseInt(
+    value,
+    10
+  );
 
-  return Number.isNaN(
-    parsed
-  ) || parsed < 0
-    ? 0
-    : parsed;
+  if (
+    Number.isNaN(parsed) ||
+    parsed < 0
+  ) {
+    return 0;
+  }
+
+  return parsed;
 }
 
 function getPublished(
   formData: FormData
 ) {
   return (
-    formData.get(
-      "published"
-    ) !== "false"
+    formData.get("published") !==
+    "false"
   );
 }
 
 function getImageExtension(
   file: File
 ) {
+  const extension =
+    file.name
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+
   if (
-    file.type ===
-    "image/png"
+    extension === "jpg" ||
+    extension === "jpeg" ||
+    extension === "png" ||
+    extension === "webp"
   ) {
-    return "png";
+    return extension;
   }
 
   if (
-    file.type ===
-    "image/webp"
+    file.type === "image/jpeg"
+  ) {
+    return "jpg";
+  }
+
+  if (
+    file.type === "image/webp"
   ) {
     return "webp";
   }
 
-  return "jpg";
+  return "png";
 }
 
-async function saveCommitteeImage(
+/* ═════════════════════════════════════
+   SUPABASE IMAGE UPLOAD
+═════════════════════════════════════ */
+
+async function uploadCommitteeImage(
   file: File
 ) {
   const allowedTypes = [
-    "image/png",
     "image/jpeg",
+    "image/png",
     "image/webp",
   ];
-
-  const maxSize =
-    5 * 1024 * 1024;
 
   if (
     !allowedTypes.includes(
@@ -109,15 +124,18 @@ async function saveCommitteeImage(
     )
   ) {
     throw new Error(
-      "Only JPG, PNG, and WEBP images are allowed."
+      "Only JPG, PNG, or WEBP images are allowed."
     );
   }
+
+  const maxSize =
+    5 * 1024 * 1024;
 
   if (
     file.size > maxSize
   ) {
     throw new Error(
-      "Image must be smaller than 5 MB."
+      "Committee member image must be smaller than 5MB."
     );
   }
 
@@ -125,40 +143,48 @@ async function saveCommitteeImage(
     getImageExtension(file);
 
   const fileName =
-    `${Date.now()}-${randomUUID()}.${extension}`;
-
-  const uploadDirectory =
-    join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "committees"
-    );
-
-  await mkdir(
-    uploadDirectory,
-    {
-      recursive: true,
-    }
-  );
+    `${randomUUID()}.${extension}`;
 
   const filePath =
-    join(
-      uploadDirectory,
-      fileName
+    `committee-members/${fileName}`;
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  const {
+    data: uploadData,
+    error: uploadError,
+  } = await supabase.storage
+    .from(IMAGES_BUCKET)
+    .upload(
+      filePath,
+      arrayBuffer,
+      {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      }
     );
 
-  const buffer =
-    Buffer.from(
-      await file.arrayBuffer()
+  if (uploadError) {
+    console.error(
+      "SUPABASE_COMMITTEE_UPLOAD_ERROR",
+      uploadError
     );
 
-  await writeFile(
-    filePath,
-    buffer
-  );
+    throw new Error(
+      `Failed to upload committee image: ${uploadError.message}`
+    );
+  }
 
-  return `/uploads/committees/${fileName}`;
+  const { data } =
+    supabase.storage
+      .from(IMAGES_BUCKET)
+      .getPublicUrl(
+        uploadData.path
+      );
+
+  return data.publicUrl;
 }
 
 /* ═════════════════════════════════════
@@ -177,8 +203,7 @@ export async function GET() {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Unauthorized",
+          error: "Unauthorized",
         },
         {
           status: 401,
@@ -187,51 +212,45 @@ export async function GET() {
     }
 
     const committees =
-      await prisma.committee.findMany(
-        {
-          orderBy: [
-            {
-              order: "asc",
-            },
-            {
-              createdAt:
-                "asc",
-            },
-          ],
+      await prisma.committee.findMany({
+        orderBy: [
+          {
+            order: "asc",
+          },
+          {
+            createdAt: "asc",
+          },
+        ],
 
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            description: true,
-            published: true,
-            order: true,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          description: true,
+          published: true,
+          order: true,
 
-            members: {
-              orderBy: [
-                {
-                  order:
-                    "asc",
-                },
-                {
-                  createdAt:
-                    "asc",
-                },
-              ],
-
-              select: {
-                id: true,
-                name: true,
-                title: true,
-                image: true,
-                published:
-                  true,
-                order: true,
+          members: {
+            orderBy: [
+              {
+                order: "asc",
               },
+              {
+                createdAt: "asc",
+              },
+            ],
+
+            select: {
+              id: true,
+              name: true,
+              title: true,
+              image: true,
+              published: true,
+              order: true,
             },
           },
-        }
-      );
+        },
+      });
 
     return NextResponse.json({
       success: true,
@@ -259,7 +278,7 @@ export async function GET() {
 }
 
 /* ═════════════════════════════════════
-   CREATE MEMBER
+   CREATE COMMITTEE MEMBER
 ═════════════════════════════════════ */
 
 export async function POST(
@@ -276,8 +295,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Unauthorized",
+          error: "Unauthorized",
         },
         {
           status: 401,
@@ -307,20 +325,18 @@ export async function POST(
       );
 
     /*
-     * Make sure committee exists.
+     * Verify committee exists.
      */
     const committee =
-      await prisma.committee.findUnique(
-        {
-          where: {
-            id: committeeId,
-          },
+      await prisma.committee.findUnique({
+        where: {
+          id: committeeId,
+        },
 
-          select: {
-            id: true,
-          },
-        }
-      );
+        select: {
+          id: true,
+        },
+      });
 
     if (!committee) {
       return NextResponse.json(
@@ -336,9 +352,7 @@ export async function POST(
     }
 
     /*
-     * DEFAULT IMAGE.
-     *
-     * No uploaded image is required.
+     * Default to local default person.
      */
     let image =
       DEFAULT_PERSON_IMAGE;
@@ -347,54 +361,47 @@ export async function POST(
       formData.get("image");
 
     /*
-     * Only save an uploaded file if
-     * one was actually supplied.
+     * Image is OPTIONAL.
+     *
+     * When provided, upload it to
+     * Supabase exactly like players.
      */
     if (
-      imageValue instanceof
-        File &&
+      imageValue instanceof File &&
       imageValue.size > 0
     ) {
       image =
-        await saveCommitteeImage(
+        await uploadCommitteeImage(
           imageValue
         );
     }
 
     const member =
-      await prisma.committeeMember.create(
-        {
-          data: {
-            committeeId,
-            name,
-            title,
-            image,
+      await prisma.committeeMember.create({
+        data: {
+          committeeId,
+          name,
+          title,
+          image,
 
-            order:
-              getOrder(
-                formData.get(
-                  "order"
-                )
-              ),
+          order: getOrder(
+            formData.get("order")
+          ),
 
-            published:
-              getPublished(
-                formData
-              ),
-          },
+          published:
+            getPublished(formData),
+        },
 
-          select: {
-            id: true,
-            name: true,
-            title: true,
-            image: true,
-            published: true,
-            order: true,
-            committeeId:
-              true,
-          },
-        }
-      );
+        select: {
+          id: true,
+          name: true,
+          title: true,
+          image: true,
+          published: true,
+          order: true,
+          committeeId: true,
+        },
+      });
 
     return NextResponse.json(
       {
@@ -418,8 +425,7 @@ export async function POST(
         success: false,
 
         error:
-          error instanceof
-          Error
+          error instanceof Error
             ? error.message
             : "Failed to create committee member.",
       },
