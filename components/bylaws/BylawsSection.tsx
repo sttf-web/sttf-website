@@ -89,7 +89,7 @@ export function BylawsSection() {
   return (
     <main
       dir="rtl"
-      className="relative min-h-screen overflow-hidden bg-black text-white"
+      className="relative min-h-screen mt-20 overflow-hidden bg-black text-white"
     >
       {/* Background image */}
       <div
