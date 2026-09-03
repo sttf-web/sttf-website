@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  ExternalLink,
+  Download,
   FileText,
   Loader2,
 } from "lucide-react";
@@ -91,17 +91,26 @@ export function BylawsSection() {
       dir="rtl"
       className="relative min-h-screen overflow-hidden bg-black text-white"
     >
-      {/* Decorative background */}
-      <BylawsBackground />
+      {/* Background image */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[url('/homPage/star.png')] bg-cover bg-center bg-no-repeat opacity-40"
+      />
+
+      {/* Dark overlay for readability */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-black/55"
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 lg:px-12">
         {/* Title */}
         <div className="mb-12 flex justify-end">
-          <div className="text-right">
+          <div className="w-full text-right">
             <div className="flex items-center justify-end gap-3">
               <div className="h-[2px] w-7 bg-emerald-400" />
 
-              <h1 className="text-2xl font-bold text-white sm:text-3xl">
+              <h1 className="text-right text-2xl font-bold text-white sm:text-3xl">
                 اللوائح
               </h1>
             </div>
@@ -125,7 +134,7 @@ export function BylawsSection() {
 
         {status === "error" && (
           <div className="flex min-h-[400px] items-center justify-center">
-            <p className="text-center text-sm text-white/60">
+            <p className="w-full text-right text-sm text-white/60">
               حدث خطأ أثناء تحميل اللوائح
             </p>
           </div>
@@ -133,7 +142,7 @@ export function BylawsSection() {
 
         {status === "success" && bylaws.length === 0 && (
           <div className="flex min-h-[400px] items-center justify-center">
-            <p className="text-center text-sm text-white/60">
+            <p className="w-full text-right text-sm text-white/60">
               لا توجد لوائح متاحة حالياً
             </p>
           </div>
@@ -162,24 +171,25 @@ function BylawCard({
   const documents = bylaw.documents;
 
   /*
-   * If there is only one document, make the entire
-   * card clickable like the design in the screenshot.
+   * If there is only one document,
+   * clicking the whole card downloads it directly.
    */
   if (documents.length === 1) {
+    const document = documents[0];
+
     return (
       <a
-        href={documents[0].fileUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group relative block min-h-[112px] overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b] transition duration-300 hover:border-emerald-300 hover:bg-[#064934]"
+        href={document.fileUrl}
+        download={document.fileName ?? document.name}
+        className="group relative block min-h-[112px] overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 transition duration-300 hover:border-emerald-300 hover:bg-[#064934]"
       >
         <BylawCardDecoration />
 
         <div className="relative z-10 flex min-h-[112px] items-center justify-end px-8 sm:px-10">
-          <div className="flex min-w-[68%] items-center justify-between gap-4 bg-white/20 px-3 py-1.5 transition group-hover:bg-white/25">
-            <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition group-hover:opacity-80" />
+          <div className="flex w-full min-w-[68%] items-center justify-between gap-4 bg-white/20 px-4 py-2 transition group-hover:bg-white/25">
+            <Download className="h-4 w-4 shrink-0 text-white/60 transition group-hover:text-white" />
 
-            <span className="text-right text-base font-bold sm:text-lg">
+            <span className="flex-1 text-right text-base font-bold sm:text-lg">
               {bylaw.title}
             </span>
           </div>
@@ -190,15 +200,15 @@ function BylawCard({
 
   /*
    * Multiple documents:
-   * show the bylaw title and the individual PDFs underneath.
+   * title stays on the card and every document downloads directly.
    */
   return (
-    <div className="group relative overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b] transition duration-300 hover:border-emerald-300">
+    <div className="group relative overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 transition duration-300 hover:border-emerald-300">
       <BylawCardDecoration />
 
-      <div className="relative z-10 px-8 py-5 sm:px-10">
+      <div className="relative z-10 px-8 py-5 text-right sm:px-10">
         <div className="flex justify-end">
-          <div className="min-w-[68%] bg-white/20 px-3 py-1.5">
+          <div className="w-full min-w-[68%] bg-white/20 px-4 py-2">
             <h2 className="text-right text-base font-bold sm:text-lg">
               {bylaw.title}
             </h2>
@@ -217,14 +227,13 @@ function BylawCard({
               <a
                 key={document.id}
                 href={document.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 transition hover:border-emerald-400/40 hover:bg-white/[0.06]"
+                download={document.fileName ?? document.name}
+                className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 text-right transition hover:border-emerald-400/40 hover:bg-white/[0.06]"
               >
-                <ExternalLink className="h-4 w-4 shrink-0 text-white/40" />
+                <Download className="h-4 w-4 shrink-0 text-white/40" />
 
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="truncate text-sm font-medium text-white/90">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+                  <span className="truncate text-right text-sm font-medium text-white/90">
                     {document.name}
                   </span>
 
@@ -250,26 +259,5 @@ function BylawCardDecoration() {
 
       <div className="pointer-events-none absolute -right-20 top-1/2 h-32 w-56 -translate-y-1/2 -rotate-12 border border-emerald-400/[0.06]" />
     </>
-  );
-}
-
-function BylawsBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
-      {/* Centre vertical line */}
-      <div className="absolute left-1/2 top-[200px] h-[75%] w-px bg-emerald-400/[0.06]" />
-
-      {/* Geometric outlines */}
-      <div className="absolute left-1/2 top-[25%] h-40 w-72 -translate-x-1/2 rotate-45 border border-emerald-400/[0.08]" />
-
-      <div className="absolute left-[12%] top-[42%] h-24 w-[38%] rotate-2 border border-emerald-400/[0.07]" />
-
-      <div className="absolute right-[12%] top-[42%] h-24 w-[38%] -rotate-2 border border-emerald-400/[0.07]" />
-
-      <div className="absolute left-1/2 top-[58%] h-40 w-72 -translate-x-1/2 rotate-45 border border-emerald-400/[0.06]" />
-    </div>
   );
 }
