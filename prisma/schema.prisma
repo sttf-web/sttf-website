@@ -448,3 +448,99 @@ model CommitteeMember {
   @@index([published])
   @@index([order])
 }
+
+/**
+ * Federation Bylaws
+ *
+ * A bylaw can contain multiple uploaded documents/files.
+ *
+ * Examples:
+ * - Players & Coaches Bylaw
+ * - Competition Bylaw
+ * - Referees Bylaw
+ */
+model Bylaw {
+  id          String          @id @default(cuid())
+
+  title       String
+  slug        String          @unique
+  description String?
+
+  published   Boolean         @default(true)
+  order       Int             @default(0)
+
+  documents   BylawDocument[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([published])
+  @@index([order])
+}
+
+/**
+ * Individual documents belonging to a bylaw.
+ *
+ * A single bylaw may have multiple documents, for example:
+ * - Main regulation PDF
+ * - Appendices
+ * - Amendments
+ * - Arabic version
+ * - English version
+ */
+model BylawDocument {
+  id        String   @id @default(cuid())
+
+  /**
+   * Display name shown to the user.
+   * Example:
+   * "لائحة اللاعبين والمدربين 2026"
+   */
+  name      String
+
+  /**
+   * Stored file path / URL.
+   *
+   * Examples:
+   * "/uploads/bylaws/players-coaches-2026.pdf"
+   * or an external/storage URL.
+   */
+  fileUrl   String
+
+  /**
+   * Original uploaded filename.
+   * Example:
+   * "Players-and-Coaches-Bylaw-2026.pdf"
+   */
+  fileName  String?
+
+  /**
+   * MIME type.
+   * Example:
+   * "application/pdf"
+   */
+  mimeType  String?
+
+  /**
+   * File size in bytes.
+   */
+  fileSize  Int?
+
+  /**
+   * Allows you to manually arrange documents
+   * within the same bylaw.
+   */
+  order     Int      @default(0)
+
+  published Boolean  @default(true)
+
+  bylawId   String
+  bylaw     Bylaw    @relation(fields: [bylawId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bylawId])
+  @@index([bylawId, order])
+  @@index([published])
+}

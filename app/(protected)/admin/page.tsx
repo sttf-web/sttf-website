@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  BookOpenText,
   Building2,
   CalendarDays,
   Gavel,
@@ -15,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import ManageBylawsPanel from "@/components/admin/ManageBylawsPanel";
 import AddPlayersToClub from "@/components/admin/AddPlayersToClub";
 import AdminLeagueTable from "@/components/admin/AdminLeagueTable";
 import CreateClubForm from "@/components/admin/CreateClubForm";
@@ -42,7 +44,8 @@ type AdminTabId =
   | "league"
   | "partners"
   | "org"
-  | "committees";
+  | "committees"
+  | "bylaws";
 
 type AdminTab = {
   id: AdminTabId;
@@ -131,6 +134,14 @@ const ADMIN_TABS: AdminTab[] = [
       "Add, edit, reorder, publish, and remove members of federation committees.",
     icon: Gavel,
   },
+  {
+  id: "bylaws",
+  label: "Bylaws",
+  title: "Bylaw Management",
+  description:
+    "Create federation bylaws and manage their uploaded documents.",
+  icon: BookOpenText,
+},
 ];
 
 export default function Admin() {
@@ -282,6 +293,8 @@ export default function Admin() {
           {activeTabId === "messages" && <MessagesList />}
 
           {activeTabId === "league" && <AdminLeagueTable />}
+
+          {activeTabId === "bylaws" && <ManageBylawsPanel />}
 
           {activeTabId === "teams" && <ManageTeamsPanel />}
 
