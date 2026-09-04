@@ -116,11 +116,12 @@ function LocationPanel({ visible }: { visible: boolean }) {
         `}
       >
         <h2 className="m-0 text-[clamp(28px,3.5vw,48px)] font-black leading-tight text-[#005043]">
-          أين تجدنا ؟
+         هاوي ؟
         </h2>
 
         <p className="m-0 max-w-[360px] text-[clamp(14px,1.4vw,17px)] font-medium leading-[1.85] text-[#2a4a40]">
-          أبحث عن صالة الاتحاد السعودي لكرة الطاولة و انشئ عضويتك الآن
+         إذا كنت لاعب هاوي أبحث عن الصالات التابعة
+        للاتحاد السعودي لكرة الطاولة و انشئ عضويتك الآن 
         </p>
 
         <div>
@@ -128,7 +129,7 @@ function LocationPanel({ visible }: { visible: boolean }) {
             href="/contact"
             className="mt-2 inline-block rounded-lg border-[1.5px] border-[#005043] px-6 py-2.5 text-sm font-bold text-[#005043] no-underline transition-colors duration-200 hover:bg-[#005043] hover:text-white"
           >
-            أنقر هنا
+           أنقر هنا
           </Link>
         </div>
       </div>

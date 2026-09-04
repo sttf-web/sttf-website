@@ -36,18 +36,15 @@ type FetchStatus =
   | "success"
   | "error";
 
-function getDownloadUrl(
-  document: BylawDocument
-) {
-  return `/api/bylaws/documents/${document.id}/download`;
-}
-
 export function BylawsSection() {
-  const [bylaws, setBylaws] = useState<
-    Bylaw[]
-  >([]);
+  const [bylaws, setBylaws] = useState<Bylaw[]>([]);
   const [status, setStatus] =
     useState<FetchStatus>("idle");
+
+  const [
+    downloadingDocumentId,
+    setDownloadingDocumentId,
+  ] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,13 +53,10 @@ export function BylawsSection() {
       try {
         setStatus("loading");
 
-        const response = await fetch(
-          "/api/bylaws",
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
+        const response = await fetch("/api/bylaws", {
+          method: "GET",
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           throw new Error(
@@ -73,9 +67,7 @@ export function BylawsSection() {
         const payload =
           (await response.json()) as BylawsResponse;
 
-        if (
-          !Array.isArray(payload.bylaws)
-        ) {
+        if (!Array.isArray(payload.bylaws)) {
           throw new Error(
             "Invalid bylaws response"
           );
@@ -103,6 +95,70 @@ export function BylawsSection() {
       cancelled = true;
     };
   }, []);
+
+  async function handleDownload(
+    bylawDocument: BylawDocument
+  ) {
+    if (
+      downloadingDocumentId ===
+      bylawDocument.id
+    ) {
+      return;
+    }
+
+    try {
+      setDownloadingDocumentId(
+        bylawDocument.id
+      );
+
+      const response = await fetch(
+        bylawDocument.fileUrl,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to download document: ${response.status}`
+        );
+      }
+
+      const blob = await response.blob();
+
+      const objectUrl =
+        URL.createObjectURL(blob);
+
+      const downloadLink =
+        window.document.createElement("a");
+
+      downloadLink.href = objectUrl;
+
+      downloadLink.download =
+        bylawDocument.fileName ||
+        bylawDocument.name ||
+        "bylaw-document";
+
+      downloadLink.style.display = "none";
+
+      window.document.body.appendChild(
+        downloadLink
+      );
+
+      downloadLink.click();
+
+      downloadLink.remove();
+
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error(
+        "DOWNLOAD_BYLAW_ERROR",
+        error
+      );
+    } finally {
+      setDownloadingDocumentId(null);
+    }
+  }
 
   return (
     <main
@@ -176,6 +232,10 @@ export function BylawsSection() {
                 <BylawCard
                   key={bylaw.id}
                   bylaw={bylaw}
+                  downloadingDocumentId={
+                    downloadingDocumentId
+                  }
+                  onDownload={handleDownload}
                 />
               ))}
             </div>
@@ -185,11 +245,19 @@ export function BylawsSection() {
   );
 }
 
+type BylawCardProps = {
+  bylaw: Bylaw;
+  downloadingDocumentId: string | null;
+  onDownload: (
+    document: BylawDocument
+  ) => Promise<void>;
+};
+
 function BylawCard({
   bylaw,
-}: {
-  bylaw: Bylaw;
-}) {
+  downloadingDocumentId,
+  onDownload,
+}: BylawCardProps) {
   const documents = bylaw.documents;
 
   /*
@@ -197,25 +265,37 @@ function BylawCard({
    * clicking anywhere on the card downloads it.
    */
   if (documents.length === 1) {
-    const document = documents[0];
+    const bylawDocument = documents[0];
+
+    const isDownloading =
+      downloadingDocumentId ===
+      bylawDocument.id;
 
     return (
-      <a
-        href={getDownloadUrl(document)}
-        className="group relative block min-h-[112px] overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 transition duration-300 hover:border-emerald-300 hover:bg-[#064934]"
+      <button
+        type="button"
+        disabled={isDownloading}
+        onClick={() =>
+          void onDownload(bylawDocument)
+        }
+        className="group relative block min-h-[112px] w-full overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 text-white transition duration-300 hover:border-emerald-300 hover:bg-[#064934] disabled:cursor-wait disabled:opacity-70"
       >
         <BylawCardDecoration />
 
         <div className="relative z-10 flex min-h-[112px] items-center justify-end px-8 sm:px-10">
           <div className="flex w-full min-w-[68%] items-center justify-between gap-4 bg-white/20 px-4 py-2 transition group-hover:bg-white/25">
-            <Download className="h-4 w-4 shrink-0 text-white/60 transition group-hover:text-white" />
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" />
+            ) : (
+              <Download className="h-4 w-4 shrink-0 text-white/60 transition group-hover:text-white" />
+            )}
 
             <span className="flex-1 text-right text-base font-bold sm:text-lg">
               {bylaw.title}
             </span>
           </div>
         </div>
-      </a>
+      </button>
     );
   }
 
@@ -244,25 +324,39 @@ function BylawCard({
         {documents.length > 0 ? (
           <div className="mt-5 space-y-2 border-t border-white/10 pt-4">
             {documents.map(
-              (document) => (
-                <a
-                  key={document.id}
-                  href={getDownloadUrl(
-                    document
-                  )}
-                  className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 text-right transition hover:border-emerald-400/40 hover:bg-white/[0.06]"
-                >
-                  <Download className="h-4 w-4 shrink-0 text-white/40" />
+              (bylawDocument) => {
+                const isDownloading =
+                  downloadingDocumentId ===
+                  bylawDocument.id;
 
-                  <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
-                    <span className="truncate text-right text-sm font-medium text-white/90">
-                      {document.name}
-                    </span>
+                return (
+                  <button
+                    key={bylawDocument.id}
+                    type="button"
+                    disabled={isDownloading}
+                    onClick={() =>
+                      void onDownload(
+                        bylawDocument
+                      )
+                    }
+                    className="flex w-full items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 text-right transition hover:border-emerald-400/40 hover:bg-white/[0.06] disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-400" />
+                    ) : (
+                      <Download className="h-4 w-4 shrink-0 text-white/40" />
+                    )}
 
-                    <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
-                  </div>
-                </a>
-              )
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+                      <span className="truncate text-right text-sm font-medium text-white/90">
+                        {bylawDocument.name}
+                      </span>
+
+                      <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
+                    </div>
+                  </button>
+                );
+              }
             )}
           </div>
         ) : (

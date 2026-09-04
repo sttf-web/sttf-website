@@ -1,24 +1,17 @@
 import { randomUUID } from "crypto";
-import {
-  mkdir,
-  writeFile,
-} from "fs/promises";
-import { extname, join } from "path";
+import { extname } from "path";
 import {
   NextRequest,
   NextResponse,
 } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-const UPLOAD_DIRECTORY = join(
-  process.cwd(),
-  "public",
-  "uploads",
-  "bylaws"
-);
+const BYLAWS_BUCKET = "bylaws";
+const BYLAWS_FOLDER = "documents";
 
 function createSlug(value: string) {
   return value
@@ -29,7 +22,9 @@ function createSlug(value: string) {
 }
 
 function getSafeExtension(file: File) {
-  const originalExtension = extname(file.name);
+  const originalExtension = extname(
+    file.name
+  );
 
   if (originalExtension) {
     return originalExtension.toLowerCase();
@@ -38,59 +33,128 @@ function getSafeExtension(file: File) {
   switch (file.type) {
     case "application/pdf":
       return ".pdf";
+
     case "application/msword":
       return ".doc";
+
     case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
       return ".docx";
+
     default:
       return "";
   }
 }
 
-async function saveUploadedFile(file: File) {
-  await mkdir(UPLOAD_DIRECTORY, {
-    recursive: true,
-  });
+async function uploadFileToSupabase(
+  file: File
+) {
+  const extension =
+    getSafeExtension(file);
 
-  const extension = getSafeExtension(file);
-  const storedFileName = `${randomUUID()}${extension}`;
+  const storedFileName =
+    `${randomUUID()}${extension}`;
 
-  const absolutePath = join(
-    UPLOAD_DIRECTORY,
-    storedFileName
-  );
+  const storagePath =
+    `${BYLAWS_FOLDER}/${storedFileName}`;
 
-  const bytes = await file.arrayBuffer();
+  const bytes =
+    await file.arrayBuffer();
 
-  await writeFile(
-    absolutePath,
-    Buffer.from(bytes)
-  );
+  const { error: uploadError } =
+    await supabaseAdmin.storage
+      .from(BYLAWS_BUCKET)
+      .upload(
+        storagePath,
+        Buffer.from(bytes),
+        {
+          cacheControl: "3600",
+          upsert: false,
+          contentType:
+            file.type ||
+            "application/octet-stream",
+        }
+      );
+
+  if (uploadError) {
+    console.error(
+      "SUPABASE_BYLAW_UPLOAD_ERROR",
+      uploadError
+    );
+
+    throw new Error(
+      `Failed to upload ${file.name}: ${uploadError.message}`
+    );
+  }
+
+  const { data } =
+    supabaseAdmin.storage
+      .from(BYLAWS_BUCKET)
+      .getPublicUrl(storagePath);
+
+  if (!data.publicUrl) {
+    /*
+     * If something very unusual happens after upload,
+     * remove the uploaded object so we don't leave an
+     * orphaned file.
+     */
+    await supabaseAdmin.storage
+      .from(BYLAWS_BUCKET)
+      .remove([storagePath]);
+
+    throw new Error(
+      `Unable to generate public URL for ${file.name}.`
+    );
+  }
 
   return {
-    fileUrl: `/uploads/bylaws/${storedFileName}`,
+    storagePath,
+    fileUrl: data.publicUrl,
     fileName: file.name,
     mimeType: file.type || null,
     fileSize: file.size,
   };
 }
 
-async function createUniqueSlug(title: string) {
+async function removeUploadedFiles(
+  paths: string[]
+) {
+  if (paths.length === 0) {
+    return;
+  }
+
+  const { error } =
+    await supabaseAdmin.storage
+      .from(BYLAWS_BUCKET)
+      .remove(paths);
+
+  if (error) {
+    console.error(
+      "ROLLBACK_BYLAW_FILES_ERROR",
+      error
+    );
+  }
+}
+
+async function createUniqueSlug(
+  title: string
+) {
   const baseSlug =
-    createSlug(title) || `bylaw-${randomUUID()}`;
+    createSlug(title) ||
+    `bylaw-${randomUUID()}`;
 
   let slug = baseSlug;
   let counter = 1;
 
   while (true) {
-    const existing = await prisma.bylaw.findUnique({
-      where: {
-        slug,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const existing =
+      await prisma.bylaw.findUnique({
+        where: {
+          slug,
+        },
+        select: {
+          id: true,
+        },
+      });
 
     if (!existing) {
       return slug;
@@ -103,44 +167,47 @@ async function createUniqueSlug(title: string) {
 
 export async function GET() {
   try {
-    const bylaws = await prisma.bylaw.findMany({
-      orderBy: [
-        {
-          order: "asc",
-        },
-        {
-          createdAt: "asc",
-        },
-      ],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        published: true,
-        order: true,
-        documents: {
-          orderBy: [
-            {
-              order: "asc",
+    const bylaws =
+      await prisma.bylaw.findMany({
+        orderBy: [
+          {
+            order: "asc",
+          },
+          {
+            createdAt: "asc",
+          },
+        ],
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          published: true,
+          order: true,
+
+          documents: {
+            orderBy: [
+              {
+                order: "asc",
+              },
+              {
+                createdAt: "asc",
+              },
+            ],
+
+            select: {
+              id: true,
+              name: true,
+              fileUrl: true,
+              fileName: true,
+              mimeType: true,
+              fileSize: true,
+              order: true,
+              published: true,
             },
-            {
-              createdAt: "asc",
-            },
-          ],
-          select: {
-            id: true,
-            name: true,
-            fileUrl: true,
-            fileName: true,
-            mimeType: true,
-            fileSize: true,
-            order: true,
-            published: true,
           },
         },
-      },
-    });
+      });
 
     return NextResponse.json({
       bylaws,
@@ -153,7 +220,8 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        error: "Failed to load bylaws.",
+        error:
+          "Failed to load bylaws.",
       },
       {
         status: 500,
@@ -165,11 +233,16 @@ export async function GET() {
 export async function POST(
   request: NextRequest
 ) {
+  const uploadedStoragePaths: string[] =
+    [];
+
   try {
     const formData =
       await request.formData();
 
-    const titleValue = formData.get("title");
+    const titleValue =
+      formData.get("title");
+
     const descriptionValue =
       formData.get("description");
 
@@ -179,7 +252,8 @@ export async function POST(
         : "";
 
     const description =
-      typeof descriptionValue === "string"
+      typeof descriptionValue ===
+      "string"
         ? descriptionValue.trim()
         : "";
 
@@ -187,13 +261,15 @@ export async function POST(
       .getAll("files")
       .filter(
         (value): value is File =>
-          value instanceof File && value.size > 0
+          value instanceof File &&
+          value.size > 0
       );
 
     if (!title) {
       return NextResponse.json(
         {
-          error: "Bylaw title is required.",
+          error:
+            "Bylaw title is required.",
         },
         {
           status: 400,
@@ -213,7 +289,8 @@ export async function POST(
       );
     }
 
-    const slug = await createUniqueSlug(title);
+    const slug =
+      await createUniqueSlug(title);
 
     const highestOrder =
       await prisma.bylaw.aggregate({
@@ -223,45 +300,82 @@ export async function POST(
       });
 
     const bylawOrder =
-      (highestOrder._max.order ?? -1) + 1;
+      (highestOrder._max.order ??
+        -1) + 1;
 
-    const uploadedFiles =
-      await Promise.all(
-        files.map((file) =>
-          saveUploadedFile(file)
-        )
+    /*
+     * Upload actual files to Supabase
+     * Storage.
+     */
+    const uploadedFiles = [];
+
+    for (const file of files) {
+      const uploadedFile =
+        await uploadFileToSupabase(
+          file
+        );
+
+      uploadedStoragePaths.push(
+        uploadedFile.storagePath
       );
 
+      uploadedFiles.push(
+        uploadedFile
+      );
+    }
+
+    /*
+     * Only after all uploads succeed do we
+     * create the database records.
+     */
     const bylaw =
       await prisma.bylaw.create({
         data: {
           title,
           slug,
+
           description:
             description || null,
+
           order: bylawOrder,
           published: true,
 
           documents: {
-            create: uploadedFiles.map(
-              (uploadedFile, index) => ({
-                name:
-                  uploadedFile.fileName ||
-                  `Document ${index + 1}`,
-                fileUrl:
-                  uploadedFile.fileUrl,
-                fileName:
-                  uploadedFile.fileName,
-                mimeType:
-                  uploadedFile.mimeType,
-                fileSize:
-                  uploadedFile.fileSize,
-                published: true,
-                order: index,
-              })
-            ),
+            create:
+              uploadedFiles.map(
+                (
+                  uploadedFile,
+                  index
+                ) => ({
+                  name:
+                    uploadedFile.fileName ||
+                    `Document ${
+                      index + 1
+                    }`,
+
+                  /*
+                   * This is now a real
+                   * Supabase Storage URL.
+                   */
+                  fileUrl:
+                    uploadedFile.fileUrl,
+
+                  fileName:
+                    uploadedFile.fileName,
+
+                  mimeType:
+                    uploadedFile.mimeType,
+
+                  fileSize:
+                    uploadedFile.fileSize,
+
+                  published: true,
+                  order: index,
+                })
+              ),
           },
         },
+
         select: {
           id: true,
           title: true,
@@ -269,10 +383,12 @@ export async function POST(
           description: true,
           published: true,
           order: true,
+
           documents: {
             orderBy: {
               order: "asc",
             },
+
             select: {
               id: true,
               name: true,
@@ -301,9 +417,20 @@ export async function POST(
       error
     );
 
+    /*
+     * If Supabase uploads succeeded but
+     * Prisma failed, clean the files up.
+     */
+    await removeUploadedFiles(
+      uploadedStoragePaths
+    );
+
     return NextResponse.json(
       {
-        error: "Failed to create bylaw.",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create bylaw.",
       },
       {
         status: 500,

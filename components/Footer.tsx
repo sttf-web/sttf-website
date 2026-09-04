@@ -20,22 +20,17 @@ const socialLinks = [
   {
     href: "https://www.youtube.com/channel/UCeaYi8vJ-7ci-xHJmeAttFw/videos",
     label: "youtube",
-    icon: "/images/social5.png",
+    icon: "/images/social8.png",
   },
   {
     href: "https://www.tiktok.com/@sttfksa",
     label: "tiktok",
-    icon: "/images/social6.png",
+    icon: "/images/social7.png",
   },
   {
     href: "https://www.snapchat.com/topic/saudi-table-tennis-federation-players",
     label: "snapchat",
-    icon: "/images/social7.png",
-  },
-  {
-    href: "https://www.facebook.com/sttfksa/",
-    label: "facebook",
-    icon: "/images/social8.png",
+    icon: "/images/social6.png",
   },
 ];
 
