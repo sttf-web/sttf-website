@@ -1,6 +1,9 @@
 import { randomUUID } from "crypto";
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { auth } from "@/lib/auth";
@@ -8,7 +11,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const DEFAULT_PERSON_IMAGE = "/images/defaultPerson.png";
+const DEFAULT_PERSON_IMAGE =
+  "/images/defaultPerson.png";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,7 +20,8 @@ const supabase = createClient(
 );
 
 const IMAGES_BUCKET =
-  process.env.SUPABASE_CLUB_LOGOS_BUCKET || "images";
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET ||
+  "images";
 
 /* ═════════════════════════════════════
    HELPERS
@@ -32,10 +37,30 @@ function getRequiredString(
     typeof value !== "string" ||
     value.trim().length === 0
   ) {
-    throw new Error(`${key} is required.`);
+    throw new Error(
+      `${key} is required.`
+    );
   }
 
   return value.trim();
+}
+
+function getOptionalString(
+  formData: FormData,
+  key: string
+) {
+  const value = formData.get(key);
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue =
+    value.trim();
+
+  return trimmedValue.length > 0
+    ? trimmedValue
+    : null;
 }
 
 function getOrder(
@@ -48,10 +73,8 @@ function getOrder(
     return 0;
   }
 
-  const parsed = Number.parseInt(
-    value,
-    10
-  );
+  const parsed =
+    Number.parseInt(value, 10);
 
   if (
     Number.isNaN(parsed) ||
@@ -160,7 +183,8 @@ async function uploadCommitteeImage(
       filePath,
       arrayBuffer,
       {
-        contentType: file.type,
+        contentType:
+          file.type,
         cacheControl: "3600",
         upsert: false,
       }
@@ -278,6 +302,119 @@ export async function GET() {
 }
 
 /* ═════════════════════════════════════
+   UPDATE COMMITTEE DESCRIPTION
+═════════════════════════════════════ */
+
+export async function PATCH(
+  request: NextRequest
+) {
+  try {
+    const session =
+      await auth.api.getSession({
+        headers:
+          await headers(),
+      });
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const formData =
+      await request.formData();
+
+    const committeeId =
+      getRequiredString(
+        formData,
+        "committeeId"
+      );
+
+    const description =
+      getOptionalString(
+        formData,
+        "description"
+      );
+
+    const existingCommittee =
+      await prisma.committee.findUnique({
+        where: {
+          id: committeeId,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (!existingCommittee) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Committee not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const committee =
+      await prisma.committee.update({
+        where: {
+          id: committeeId,
+        },
+
+        data: {
+          description,
+        },
+
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          description: true,
+          published: true,
+          order: true,
+        },
+      });
+
+    return NextResponse.json({
+      success: true,
+      committee,
+    });
+  } catch (
+    error: unknown
+  ) {
+    console.error(
+      "UPDATE_COMMITTEE_ERROR",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update committee.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+/* ═════════════════════════════════════
    CREATE COMMITTEE MEMBER
 ═════════════════════════════════════ */
 
@@ -324,9 +461,6 @@ export async function POST(
         "title"
       );
 
-    /*
-     * Verify committee exists.
-     */
     const committee =
       await prisma.committee.findUnique({
         where: {
@@ -351,21 +485,12 @@ export async function POST(
       );
     }
 
-    /*
-     * Default to local default person.
-     */
     let image =
       DEFAULT_PERSON_IMAGE;
 
     const imageValue =
       formData.get("image");
 
-    /*
-     * Image is OPTIONAL.
-     *
-     * When provided, upload it to
-     * Supabase exactly like players.
-     */
     if (
       imageValue instanceof File &&
       imageValue.size > 0
@@ -389,7 +514,9 @@ export async function POST(
           ),
 
           published:
-            getPublished(formData),
+            getPublished(
+              formData
+            ),
         },
 
         select: {
