@@ -1,17 +1,29 @@
 import { randomUUID } from "crypto";
 import { extname } from "path";
+import { createClient } from "@supabase/supabase-js";
 import {
   NextRequest,
   NextResponse,
 } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-const BYLAWS_BUCKET = "bylaws";
-const BYLAWS_FOLDER = "documents";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+/*
+ * Use the same existing bucket that is already
+ * working for player images and other uploads.
+ */
+const STORAGE_BUCKET =
+  process.env.SUPABASE_CLUB_LOGOS_BUCKET ||
+  "images";
+
+const BYLAWS_FOLDER = "bylaws";
 
 function createSlug(value: string) {
   return value
@@ -45,7 +57,7 @@ function getSafeExtension(file: File) {
   }
 }
 
-async function uploadFileToSupabase(
+async function uploadBylawFile(
   file: File
 ) {
   const extension =
@@ -54,26 +66,28 @@ async function uploadFileToSupabase(
   const storedFileName =
     `${randomUUID()}${extension}`;
 
-  const storagePath =
+  const filePath =
     `${BYLAWS_FOLDER}/${storedFileName}`;
 
-  const bytes =
+  const arrayBuffer =
     await file.arrayBuffer();
 
-  const { error: uploadError } =
-    await supabaseAdmin.storage
-      .from(BYLAWS_BUCKET)
-      .upload(
-        storagePath,
-        Buffer.from(bytes),
-        {
-          cacheControl: "3600",
-          upsert: false,
-          contentType:
-            file.type ||
-            "application/octet-stream",
-        }
-      );
+  const {
+    data: uploadData,
+    error: uploadError,
+  } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(
+      filePath,
+      arrayBuffer,
+      {
+        contentType:
+          file.type ||
+          "application/octet-stream",
+        cacheControl: "3600",
+        upsert: false,
+      }
+    );
 
   if (uploadError) {
     console.error(
@@ -86,50 +100,44 @@ async function uploadFileToSupabase(
     );
   }
 
-  const { data } =
-    supabaseAdmin.storage
-      .from(BYLAWS_BUCKET)
-      .getPublicUrl(storagePath);
-
-  if (!data.publicUrl) {
-    /*
-     * If something very unusual happens after upload,
-     * remove the uploaded object so we don't leave an
-     * orphaned file.
-     */
-    await supabaseAdmin.storage
-      .from(BYLAWS_BUCKET)
-      .remove([storagePath]);
-
-    throw new Error(
-      `Unable to generate public URL for ${file.name}.`
-    );
-  }
+  const { data } = supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(uploadData.path);
 
   return {
-    storagePath,
+    storagePath: uploadData.path,
+
+    /*
+     * This is the actual Supabase URL
+     * saved to Prisma.
+     */
     fileUrl: data.publicUrl,
+
+    /*
+     * Preserve the original filename.
+     */
     fileName: file.name,
+
     mimeType: file.type || null,
     fileSize: file.size,
   };
 }
 
 async function removeUploadedFiles(
-  paths: string[]
+  storagePaths: string[]
 ) {
-  if (paths.length === 0) {
+  if (storagePaths.length === 0) {
     return;
   }
 
   const { error } =
-    await supabaseAdmin.storage
-      .from(BYLAWS_BUCKET)
-      .remove(paths);
+    await supabase.storage
+      .from(STORAGE_BUCKET)
+      .remove(storagePaths);
 
   if (error) {
     console.error(
-      "ROLLBACK_BYLAW_FILES_ERROR",
+      "ROLLBACK_BYLAW_UPLOAD_ERROR",
       error
     );
   }
@@ -177,6 +185,7 @@ export async function GET() {
             createdAt: "asc",
           },
         ],
+
         select: {
           id: true,
           title: true,
@@ -304,16 +313,14 @@ export async function POST(
         -1) + 1;
 
     /*
-     * Upload actual files to Supabase
-     * Storage.
+     * Upload each actual document
+     * to Supabase Storage.
      */
     const uploadedFiles = [];
 
     for (const file of files) {
       const uploadedFile =
-        await uploadFileToSupabase(
-          file
-        );
+        await uploadBylawFile(file);
 
       uploadedStoragePaths.push(
         uploadedFile.storagePath
@@ -325,8 +332,8 @@ export async function POST(
     }
 
     /*
-     * Only after all uploads succeed do we
-     * create the database records.
+     * Then store the Supabase URLs and
+     * metadata in PostgreSQL through Prisma.
      */
     const bylaw =
       await prisma.bylaw.create({
@@ -353,10 +360,6 @@ export async function POST(
                       index + 1
                     }`,
 
-                  /*
-                   * This is now a real
-                   * Supabase Storage URL.
-                   */
                   fileUrl:
                     uploadedFile.fileUrl,
 
@@ -418,8 +421,9 @@ export async function POST(
     );
 
     /*
-     * If Supabase uploads succeeded but
-     * Prisma failed, clean the files up.
+     * If Supabase upload worked but
+     * Prisma failed, remove the orphaned
+     * files from Storage.
      */
     await removeUploadedFiles(
       uploadedStoragePaths
