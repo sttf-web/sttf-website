@@ -36,8 +36,16 @@ type FetchStatus =
   | "success"
   | "error";
 
+function getDownloadUrl(
+  document: BylawDocument
+) {
+  return `/api/bylaws/documents/${document.id}/download`;
+}
+
 export function BylawsSection() {
-  const [bylaws, setBylaws] = useState<Bylaw[]>([]);
+  const [bylaws, setBylaws] = useState<
+    Bylaw[]
+  >([]);
   const [status, setStatus] =
     useState<FetchStatus>("idle");
 
@@ -48,10 +56,13 @@ export function BylawsSection() {
       try {
         setStatus("loading");
 
-        const response = await fetch("/api/bylaws", {
-          method: "GET",
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/bylaws",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -62,8 +73,12 @@ export function BylawsSection() {
         const payload =
           (await response.json()) as BylawsResponse;
 
-        if (!Array.isArray(payload.bylaws)) {
-          throw new Error("Invalid bylaws response");
+        if (
+          !Array.isArray(payload.bylaws)
+        ) {
+          throw new Error(
+            "Invalid bylaws response"
+          );
         }
 
         if (cancelled) return;
@@ -71,7 +86,10 @@ export function BylawsSection() {
         setBylaws(payload.bylaws);
         setStatus("success");
       } catch (error) {
-        console.error("LOAD_BYLAWS_ERROR", error);
+        console.error(
+          "LOAD_BYLAWS_ERROR",
+          error
+        );
 
         if (cancelled) return;
 
@@ -89,7 +107,7 @@ export function BylawsSection() {
   return (
     <main
       dir="rtl"
-      className="relative min-h-screen mt-20 overflow-hidden bg-black text-white"
+      className="relative mt-20 min-h-screen overflow-hidden bg-black text-white"
     >
       {/* Background image */}
       <div
@@ -97,7 +115,7 @@ export function BylawsSection() {
         className="pointer-events-none absolute inset-0 bg-[url('/homPage/star.png')] bg-cover bg-center bg-no-repeat opacity-40"
       />
 
-      {/* Dark overlay for readability */}
+      {/* Dark overlay */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-black/55"
@@ -105,9 +123,9 @@ export function BylawsSection() {
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 lg:px-12">
         {/* Title */}
-        <div className="mb-12 flex justify-end">
+        <div className="mb-12 flex justify-start">
           <div className="w-full text-right">
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-start gap-3">
               <div className="h-[2px] w-7 bg-emerald-400" />
 
               <h1 className="text-right text-2xl font-bold text-white sm:text-3xl">
@@ -115,8 +133,10 @@ export function BylawsSection() {
               </h1>
             </div>
 
-            <div className="mt-2 flex justify-end gap-1">
-              {Array.from({ length: 10 }).map((_, index) => (
+            <div className="mt-2 flex justify-start gap-1">
+              {Array.from({
+                length: 10,
+              }).map((_, index) => (
                 <span
                   key={index}
                   className="h-1.5 w-1.5 rounded-full bg-emerald-400"
@@ -140,24 +160,26 @@ export function BylawsSection() {
           </div>
         )}
 
-        {status === "success" && bylaws.length === 0 && (
-          <div className="flex min-h-[400px] items-center justify-center">
-            <p className="w-full text-right text-sm text-white/60">
-              لا توجد لوائح متاحة حالياً
-            </p>
-          </div>
-        )}
+        {status === "success" &&
+          bylaws.length === 0 && (
+            <div className="flex min-h-[400px] items-center justify-center">
+              <p className="w-full text-right text-sm text-white/60">
+                لا توجد لوائح متاحة حالياً
+              </p>
+            </div>
+          )}
 
-        {status === "success" && bylaws.length > 0 && (
-          <div className="mx-auto flex w-full max-w-[660px] flex-col gap-10">
-            {bylaws.map((bylaw) => (
-              <BylawCard
-                key={bylaw.id}
-                bylaw={bylaw}
-              />
-            ))}
-          </div>
-        )}
+        {status === "success" &&
+          bylaws.length > 0 && (
+            <div className="mx-auto flex w-full max-w-[660px] flex-col gap-10">
+              {bylaws.map((bylaw) => (
+                <BylawCard
+                  key={bylaw.id}
+                  bylaw={bylaw}
+                />
+              ))}
+            </div>
+          )}
       </div>
     </main>
   );
@@ -171,16 +193,15 @@ function BylawCard({
   const documents = bylaw.documents;
 
   /*
-   * If there is only one document,
-   * clicking the whole card downloads it directly.
+   * One document:
+   * clicking anywhere on the card downloads it.
    */
   if (documents.length === 1) {
     const document = documents[0];
 
     return (
       <a
-        href={document.fileUrl}
-        download={document.fileName ?? document.name}
+        href={getDownloadUrl(document)}
         className="group relative block min-h-[112px] overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 transition duration-300 hover:border-emerald-300 hover:bg-[#064934]"
       >
         <BylawCardDecoration />
@@ -199,8 +220,7 @@ function BylawCard({
   }
 
   /*
-   * Multiple documents:
-   * title stays on the card and every document downloads directly.
+   * Multiple documents.
    */
   return (
     <div className="group relative overflow-hidden rounded-md border border-emerald-400/70 bg-[#003d2b]/95 transition duration-300 hover:border-emerald-300">
@@ -223,28 +243,32 @@ function BylawCard({
 
         {documents.length > 0 ? (
           <div className="mt-5 space-y-2 border-t border-white/10 pt-4">
-            {documents.map((document) => (
-              <a
-                key={document.id}
-                href={document.fileUrl}
-                download={document.fileName ?? document.name}
-                className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 text-right transition hover:border-emerald-400/40 hover:bg-white/[0.06]"
-              >
-                <Download className="h-4 w-4 shrink-0 text-white/40" />
+            {documents.map(
+              (document) => (
+                <a
+                  key={document.id}
+                  href={getDownloadUrl(
+                    document
+                  )}
+                  className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/15 px-4 py-3 text-right transition hover:border-emerald-400/40 hover:bg-white/[0.06]"
+                >
+                  <Download className="h-4 w-4 shrink-0 text-white/40" />
 
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
-                  <span className="truncate text-right text-sm font-medium text-white/90">
-                    {document.name}
-                  </span>
+                  <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+                    <span className="truncate text-right text-sm font-medium text-white/90">
+                      {document.name}
+                    </span>
 
-                  <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
-                </div>
-              </a>
-            ))}
+                    <FileText className="h-4 w-4 shrink-0 text-emerald-400" />
+                  </div>
+                </a>
+              )
+            )}
           </div>
         ) : (
           <p className="mt-4 text-right text-xs text-white/40">
-            لا توجد ملفات متاحة لهذه اللائحة
+            لا توجد ملفات متاحة لهذه
+            اللائحة
           </p>
         )}
       </div>
