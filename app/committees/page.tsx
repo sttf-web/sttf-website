@@ -128,7 +128,7 @@ export default function CommitteesPage() {
       }
     }
 
-    fetchCommittees();
+    void fetchCommittees();
   }, []);
 
   const selectedCommittee =
@@ -169,9 +169,7 @@ export default function CommitteesPage() {
               "
             >
               {committees.map(
-                (
-                  committee
-                ) => {
+                (committee) => {
                   const isActive =
                     committee.slug ===
                     selectedCommitteeSlug;
@@ -256,25 +254,48 @@ export default function CommitteesPage() {
           !error &&
           selectedCommittee && (
             <section className="pt-20 md:pt-24">
-              {/* Committee title */}
+              {/* Committee heading */}
               <div className="text-right">
-                <h1 className="relative inline-block text-3xl font-black text-white md:text-4xl">
-                  {
-                    selectedCommittee.name
-                  }
+                <div className="inline-block">
+                  {/* Title */}
+                  <h1 className="relative inline-block text-3xl font-black text-white md:text-4xl">
+                    {
+                      selectedCommittee.name
+                    }
 
-                  <span
-                    aria-hidden="true"
-                    className="
-                      absolute
-                      -bottom-3
-                      right-0
-                      h-[5px]
-                      w-[115px]
-                      bg-[#18d96d]
-                    "
-                  />
-                </h1>
+                    <span
+                      aria-hidden="true"
+                      className="
+                        absolute
+                        -bottom-3
+                        right-0
+                        h-[5px]
+                        w-[115px]
+                        bg-[#18d96d]
+                      "
+                    />
+                  </h1>
+
+                  {/* Description directly underneath title */}
+                  {selectedCommittee.description && (
+                    <p
+                      className="
+                        mt-7
+                        max-w-4xl
+                        text-right
+                        text-sm
+                        leading-7
+                        text-white/70
+                        md:text-base
+                        md:leading-8
+                      "
+                    >
+                      {
+                        selectedCommittee.description
+                      }
+                    </p>
+                  )}
+                </div>
 
                 {/* Green dots */}
                 <div className="mt-6 flex justify-start gap-1.5">
@@ -294,14 +315,6 @@ export default function CommitteesPage() {
                     )
                   )}
                 </div>
-
-                {selectedCommittee.description && (
-                  <p className="mt-5 max-w-4xl text-sm leading-7 text-white/70">
-                    {
-                      selectedCommittee.description
-                    }
-                  </p>
-                )}
               </div>
 
               {/* Members */}
@@ -355,9 +368,6 @@ function CommitteeMembers({
 }: {
   members: CommitteeMember[];
 }) {
-  /*
-   * Always sort using the member order.
-   */
   const sortedMembers =
     useMemo(() => {
       return [...members].sort(
@@ -366,13 +376,6 @@ function CommitteeMembers({
       );
     }, [members]);
 
-  /*
-   * The member with order === 0
-   * is ALWAYS the person at the top.
-   *
-   * If no member has order 0,
-   * fall back to the first member.
-   */
   const topMember =
     useMemo(() => {
       return (
@@ -385,10 +388,6 @@ function CommitteeMembers({
       );
     }, [sortedMembers]);
 
-  /*
-   * Everybody except the top member
-   * goes into the 3-column grid.
-   */
   const remainingMembers =
     useMemo(() => {
       if (!topMember) {
@@ -455,7 +454,6 @@ function CommitteeMembers({
 
       {/* ═════════════════════════════
           REST OF MEMBERS
-          3 PER ROW
       ═════════════════════════════ */}
       {remainingMembers.length >
         0 && (
@@ -526,7 +524,6 @@ function CommitteeMemberCard({
         }
       `}
     >
-      {/* Image */}
       <div
         className={`
           relative
@@ -571,12 +568,10 @@ function CommitteeMemberCard({
         />
       </div>
 
-      {/* Name */}
       <h2 className="mt-5 text-2xl font-black leading-tight text-white">
         {member.name}
       </h2>
 
-      {/* Title */}
       <p className="mt-1 text-base font-black text-[#18d96d]">
         {member.title}
       </p>

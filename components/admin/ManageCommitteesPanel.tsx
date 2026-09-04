@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -8,8 +9,15 @@ import {
 import Image from "next/image";
 import {
   AlertCircle,
+  CheckCircle2,
+  ImagePlus,
   Loader2,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
   Users,
+  X,
 } from "lucide-react";
 
 type CommitteeMember = {
@@ -17,6 +25,7 @@ type CommitteeMember = {
   name: string;
   title: string;
   image: string;
+  published: boolean;
   order: number;
 };
 
@@ -25,6 +34,7 @@ type Committee = {
   slug: string;
   name: string;
   description: string | null;
+  published: boolean;
   order: number;
   members: CommitteeMember[];
 };
@@ -35,32 +45,67 @@ type CommitteesResponse = {
   error?: string;
 };
 
-const DEFAULT_PERSON_IMAGE =
-  "/images/defaultPerson.png";
+type MemberFormState = {
+  name: string;
+  title: string;
+  order: string;
+  published: boolean;
+};
 
-export default function CommitteesPage() {
+const EMPTY_FORM: MemberFormState = {
+  name: "",
+  title: "",
+  order: "0",
+  published: true,
+};
+
+export default function ManageCommitteesPanel() {
   const [committees, setCommittees] =
     useState<Committee[]>([]);
 
   const [
-    selectedCommitteeSlug,
-    setSelectedCommitteeSlug,
+    selectedCommitteeId,
+    setSelectedCommitteeId,
   ] = useState("");
 
   const [loading, setLoading] =
     useState(true);
 
+  const [creating, setCreating] =
+    useState(false);
+
+  const [
+    savingDescription,
+    setSavingDescription,
+  ] = useState(false);
+
+  const [
+    committeeDescription,
+    setCommitteeDescription,
+  ] = useState("");
+
   const [error, setError] =
     useState("");
 
-  useEffect(() => {
-    async function fetchCommittees() {
+  const [success, setSuccess] =
+    useState("");
+
+  const [form, setForm] =
+    useState<MemberFormState>(
+      EMPTY_FORM
+    );
+
+  const [imageFile, setImageFile] =
+    useState<File | null>(null);
+
+  const loadCommittees =
+    useCallback(async () => {
       try {
         setLoading(true);
         setError("");
 
         const response = await fetch(
-          "/api/committees",
+          "/api/admin/committees",
           {
             method: "GET",
             cache: "no-store",
@@ -88,7 +133,7 @@ export default function CommitteesPage() {
         if (!response.ok) {
           throw new Error(
             data.error ||
-              "Failed to fetch committees."
+              "Failed to load committees."
           );
         }
 
@@ -103,502 +148,1041 @@ export default function CommitteesPage() {
           loadedCommittees
         );
 
-        if (
-          loadedCommittees.length >
-          0
-        ) {
-          setSelectedCommitteeSlug(
-            loadedCommittees[0]
-              .slug
-          );
-        }
+        setSelectedCommitteeId(
+          (current) => {
+            if (
+              current &&
+              loadedCommittees.some(
+                (committee) =>
+                  committee.id ===
+                  current
+              )
+            ) {
+              return current;
+            }
+
+            return (
+              loadedCommittees[0]
+                ?.id ?? ""
+            );
+          }
+        );
       } catch (error) {
         console.error(
-          "FETCH_COMMITTEES_ERROR",
+          "LOAD_ADMIN_COMMITTEES_ERROR",
           error
         );
 
         setError(
           error instanceof Error
             ? error.message
-            : "Failed to fetch committees."
+            : "Failed to load committees."
         );
       } finally {
         setLoading(false);
       }
-    }
+    }, []);
 
-    void fetchCommittees();
-  }, []);
+  useEffect(() => {
+    void loadCommittees();
+  }, [loadCommittees]);
 
   const selectedCommittee =
     useMemo(() => {
       return (
         committees.find(
           (committee) =>
-            committee.slug ===
-            selectedCommitteeSlug
+            committee.id ===
+            selectedCommitteeId
         ) ?? null
       );
     }, [
       committees,
-      selectedCommitteeSlug,
+      selectedCommitteeId,
     ]);
 
-  return (
-    <main
-      dir="rtl"
-      className="min-h-screen bg-black text-white"
-    >
-      <section className="mx-auto max-w-7xl px-5 pb-20 pt-32 md:px-8">
-        {/* ═════════════════════════════
-            CATEGORY NAVIGATION
-        ═════════════════════════════ */}
-        {!loading &&
-          !error &&
-          committees.length >
-            0 && (
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-x-14
-                gap-y-7
-                sm:grid-cols-2
-                lg:grid-cols-4
-              "
-            >
-              {committees.map(
-                (committee) => {
-                  const isActive =
-                    committee.slug ===
-                    selectedCommitteeSlug;
+  /*
+   * Whenever the committee changes,
+   * populate the editable description
+   * with that committee's current value.
+   */
+  useEffect(() => {
+    setCommitteeDescription(
+      selectedCommittee?.description ??
+        ""
+    );
+  }, [selectedCommittee]);
 
-                  return (
-                    <button
+  function updateForm<
+    K extends keyof MemberFormState,
+  >(
+    key: K,
+    value: MemberFormState[K]
+  ) {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  async function handleSaveDescription() {
+    if (!selectedCommitteeId) {
+      setError(
+        "Select a committee first."
+      );
+      return;
+    }
+
+    try {
+      setSavingDescription(true);
+      setError("");
+      setSuccess("");
+
+      const formData =
+        new FormData();
+
+      formData.set(
+        "committeeId",
+        selectedCommitteeId
+      );
+
+      formData.set(
+        "description",
+        committeeDescription
+      );
+
+      const response = await fetch(
+        "/api/admin/committees",
+        {
+          method: "PATCH",
+          body: formData,
+        }
+      );
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to update committee description."
+        );
+      }
+
+      const updatedDescription =
+        data.committee
+          ?.description ?? null;
+
+      /*
+       * Update local state immediately.
+       */
+      setCommittees(
+        (current) =>
+          current.map(
+            (committee) =>
+              committee.id ===
+              selectedCommitteeId
+                ? {
+                    ...committee,
+                    description:
+                      updatedDescription,
+                  }
+                : committee
+          )
+      );
+
+      setCommitteeDescription(
+        updatedDescription ?? ""
+      );
+
+      setSuccess(
+        "Committee description updated successfully."
+      );
+    } catch (error) {
+      console.error(
+        "UPDATE_COMMITTEE_DESCRIPTION_ERROR",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update committee description."
+      );
+    } finally {
+      setSavingDescription(false);
+    }
+  }
+
+  async function handleCreateMember(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    if (!selectedCommitteeId) {
+      setError(
+        "Select a committee first."
+      );
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setError("");
+      setSuccess("");
+
+      const formData =
+        new FormData();
+
+      formData.set(
+        "committeeId",
+        selectedCommitteeId
+      );
+
+      formData.set(
+        "name",
+        form.name
+      );
+
+      formData.set(
+        "title",
+        form.title
+      );
+
+      formData.set(
+        "order",
+        form.order
+      );
+
+      formData.set(
+        "published",
+        String(form.published)
+      );
+
+      if (imageFile) {
+        formData.set(
+          "image",
+          imageFile
+        );
+      }
+
+      const response = await fetch(
+        "/api/admin/committees",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to create committee member."
+        );
+      }
+
+      setForm(EMPTY_FORM);
+      setImageFile(null);
+
+      setSuccess(
+        "Committee member added successfully."
+      );
+
+      await loadCommittees();
+    } catch (error) {
+      console.error(
+        "CREATE_COMMITTEE_MEMBER_ERROR",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create committee member."
+      );
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Committee selector + description editor */}
+      <section className="rounded-[24px] border border-white/[0.12] bg-black/20 p-5 backdrop-blur-xl md:p-6">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          {/* Left */}
+          <div>
+            <h2 className="text-lg font-bold text-white">
+              Committee Members
+            </h2>
+
+            <p className="mt-1 text-sm text-white/45">
+              Select a committee to manage
+              its members and description.
+            </p>
+          </div>
+
+          {/* Right */}
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/40">
+                Committee
+              </label>
+
+              <select
+                value={
+                  selectedCommitteeId
+                }
+                onChange={(event) => {
+                  setSelectedCommitteeId(
+                    event.target.value
+                  );
+
+                  setError("");
+                  setSuccess("");
+                }}
+                className="w-full rounded-xl border border-white/10 bg-[#082f29] px-4 py-3 text-sm text-white outline-none transition focus:border-[#00c896]"
+              >
+                {committees.map(
+                  (committee) => (
+                    <option
                       key={
                         committee.id
                       }
-                      type="button"
-                      onClick={() =>
-                        setSelectedCommitteeSlug(
-                          committee.slug
-                        )
+                      value={
+                        committee.id
                       }
-                      className={`
-                        min-h-[44px]
-                        rounded-md
-                        border
-                        px-5
-                        py-2
-                        text-sm
-                        font-bold
-                        transition
-                        duration-200
-
-                        ${
-                          isActive
-                            ? `
-                              border-[#1fce70]
-                              bg-[#999999]
-                              text-white
-                            `
-                            : `
-                              border-[#1fce70]
-                              bg-[#454545]
-                              text-white
-                              hover:bg-[#5a5a5a]
-                            `
-                        }
-                      `}
                     >
                       {
                         committee.name
                       }
-                    </button>
-                  );
-                }
-              )}
+                    </option>
+                  )
+                )}
+              </select>
             </div>
-          )}
 
-        {/* ═════════════════════════════
-            LOADING
-        ═════════════════════════════ */}
-        {loading && (
-          <div className="flex min-h-[450px] items-center justify-center">
-            <div className="flex items-center gap-3 text-sm text-white/50">
-              <Loader2 className="h-5 w-5 animate-spin text-[#18d96d]" />
+            {/* Description */}
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/40">
+                Description
+              </label>
 
-              جاري تحميل اللجان…
+              <textarea
+                value={
+                  committeeDescription
+                }
+                onChange={(event) =>
+                  setCommitteeDescription(
+                    event.target.value
+                  )
+                }
+                disabled={
+                  !selectedCommittee
+                }
+                rows={4}
+                placeholder="Enter committee description..."
+                className="w-full resize-y rounded-xl border border-white/10 bg-[#082f29] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/25 focus:border-[#00c896] disabled:cursor-not-allowed disabled:opacity-50"
+              />
+
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  disabled={
+                    !selectedCommittee ||
+                    savingDescription
+                  }
+                  onClick={() =>
+                    void handleSaveDescription()
+                  }
+                  className="flex items-center gap-2 rounded-xl bg-[#00a97e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#00bd8d] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {savingDescription ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+
+                  Save Description
+                </button>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* ═════════════════════════════
-            ERROR
-        ═════════════════════════════ */}
-        {!loading &&
-          error && (
-            <div className="mt-10 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-400">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-
-              {error}
-            </div>
-          )}
-
-        {/* ═════════════════════════════
-            SELECTED COMMITTEE
-        ═════════════════════════════ */}
-        {!loading &&
-          !error &&
-          selectedCommittee && (
-            <section className="pt-20 md:pt-24">
-              {/* Committee heading */}
-              <div className="text-right">
-                <div className="inline-block">
-                  {/* Title */}
-                  <h1 className="relative inline-block text-3xl font-black text-white md:text-4xl">
-                    {
-                      selectedCommittee.name
-                    }
-
-                    <span
-                      aria-hidden="true"
-                      className="
-                        absolute
-                        -bottom-3
-                        right-0
-                        h-[5px]
-                        w-[115px]
-                        bg-[#18d96d]
-                      "
-                    />
-                  </h1>
-
-                  {/* Description directly underneath title */}
-                  {selectedCommittee.description && (
-                    <p
-                      className="
-                        mt-7
-                        max-w-4xl
-                        text-right
-                        text-sm
-                        leading-7
-                        text-white/70
-                        md:text-base
-                        md:leading-8
-                      "
-                    >
-                      {
-                        selectedCommittee.description
-                      }
-                    </p>
-                  )}
-                </div>
-
-                {/* Green dots */}
-                <div className="mt-6 flex justify-start gap-1.5">
-                  {Array.from({
-                    length: 10,
-                  }).map(
-                    (
-                      _,
-                      index
-                    ) => (
-                      <span
-                        key={
-                          index
-                        }
-                        className="h-2.5 w-2.5 rounded-full bg-[#18d96d]"
-                      />
-                    )
-                  )}
-                </div>
-              </div>
-
-              {/* Members */}
-              {selectedCommittee
-                .members.length >
-              0 ? (
-                <CommitteeMembers
-                  members={
-                    selectedCommittee.members
-                  }
-                />
-              ) : (
-                <EmptyCommittee />
-              )}
-            </section>
-          )}
-
-        {/* No committees */}
-        {!loading &&
-          !error &&
-          committees.length ===
-            0 && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
-              <Users className="h-10 w-10 text-white/20" />
-
-              <div>
-                <h2 className="text-xl font-black">
-                  لا توجد لجان
-                  حالياً
-                </h2>
-
-                <p className="mt-2 text-sm text-white/40">
-                  سيتم عرض اللجان
-                  هنا بعد إضافتها من
-                  لوحة التحكم.
-                </p>
-              </div>
-            </div>
-          )}
+        </div>
       </section>
-    </main>
-  );
-}
 
-/* ═════════════════════════════════════
-   MEMBERS
-═════════════════════════════════════ */
-
-function CommitteeMembers({
-  members,
-}: {
-  members: CommitteeMember[];
-}) {
-  const sortedMembers =
-    useMemo(() => {
-      return [...members].sort(
-        (a, b) =>
-          a.order - b.order
-      );
-    }, [members]);
-
-  const topMember =
-    useMemo(() => {
-      return (
-        sortedMembers.find(
-          (member) =>
-            member.order === 0
-        ) ??
-        sortedMembers[0] ??
-        null
-      );
-    }, [sortedMembers]);
-
-  const remainingMembers =
-    useMemo(() => {
-      if (!topMember) {
-        return [];
-      }
-
-      return sortedMembers.filter(
-        (member) =>
-          member.id !==
-          topMember.id
-      );
-    }, [
-      sortedMembers,
-      topMember,
-    ]);
-
-  if (!topMember) {
-    return null;
-  }
-
-  return (
-    <div className="relative mx-auto mt-16 w-full max-w-6xl">
-      {/* ═════════════════════════════
-          TREE BACKGROUND
-      ═════════════════════════════ */}
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          left-1/2
-          top-[70px]
-          z-0
-          hidden
-          h-[720px]
-          w-[900px]
-          max-w-[90vw]
-          -translate-x-1/2
-          lg:block
-        "
-      >
-        <Image
-          src="/homePage/star.png"
-          alt=""
-          fill
-          sizes="900px"
-          className="
-            object-contain
-            object-top
-            opacity-55
-          "
-        />
-      </div>
-
-      {/* ═════════════════════════════
-          POSITION 0 / PRESIDENT
-      ═════════════════════════════ */}
-      <div className="relative z-10 flex justify-center">
-        <CommitteeMemberCard
-          member={topMember}
-          featured
-        />
-      </div>
-
-      {/* ═════════════════════════════
-          REST OF MEMBERS
-      ═════════════════════════════ */}
-      {remainingMembers.length >
-        0 && (
-        <div
-          className="
-            relative
-            z-10
-            mx-auto
-            mt-16
-            grid
-            max-w-5xl
-            grid-cols-1
-            place-items-center
-            gap-x-14
-            gap-y-16
-            sm:grid-cols-2
-            lg:grid-cols-3
-          "
-        >
-          {remainingMembers.map(
-            (member) => (
-              <CommitteeMemberCard
-                key={
-                  member.id
-                }
-                member={
-                  member
-                }
-              />
-            )
-          )}
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          {error}
         </div>
       )}
+
+      {/* Success */}
+      {success && (
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          {success}
+        </div>
+      )}
+
+      {/* Add member */}
+      <section className="rounded-[24px] border border-white/[0.12] bg-black/20 p-5 backdrop-blur-xl md:p-6">
+        <div className="mb-5">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+            <Plus className="h-5 w-5 text-[#00dba3]" />
+
+            Add Member
+          </h2>
+
+          <p className="mt-1 text-sm text-white/45">
+            {selectedCommittee
+              ? `Add a member to ${selectedCommittee.name}.`
+              : "Select a committee first."}
+          </p>
+        </div>
+
+        <form
+          onSubmit={
+            handleCreateMember
+          }
+          className="grid gap-4 md:grid-cols-2"
+        >
+          <AdminInput
+            label="Name"
+            value={form.name}
+            onChange={(value) =>
+              updateForm(
+                "name",
+                value
+              )
+            }
+            required
+          />
+
+          <AdminInput
+            label="Title"
+            value={form.title}
+            onChange={(value) =>
+              updateForm(
+                "title",
+                value
+              )
+            }
+            placeholder="President, Member, Vice President..."
+            required
+          />
+
+          <AdminInput
+            label="Order"
+            type="number"
+            value={form.order}
+            onChange={(value) =>
+              updateForm(
+                "order",
+                value
+              )
+            }
+          />
+
+          <label className="flex min-h-[74px] cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.04] px-4 text-sm text-white/60 transition hover:border-[#00c896]/50 hover:text-white">
+            <ImagePlus className="h-5 w-5 shrink-0" />
+
+            <span className="truncate">
+              {imageFile
+                ? imageFile.name
+                : "Choose image (optional)"}
+            </span>
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(event) =>
+                setImageFile(
+                  event.target
+                    .files?.[0] ??
+                    null
+                )
+              }
+            />
+          </label>
+
+          <div className="md:col-span-2">
+            <p className="text-xs text-white/35">
+              If no image is selected,
+              /images/defaultPerson.png
+              will be used automatically.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-3 text-sm text-white/70">
+            <input
+              type="checkbox"
+              checked={
+                form.published
+              }
+              onChange={(event) =>
+                updateForm(
+                  "published",
+                  event.target.checked
+                )
+              }
+              className="h-4 w-4 accent-[#00c896]"
+            />
+
+            Published
+          </label>
+
+          <div className="flex justify-end md:col-span-2">
+            <button
+              type="submit"
+              disabled={
+                creating ||
+                !selectedCommitteeId
+              }
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00c896] to-[#008f6a] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {creating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+
+              Add Member
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* Existing members */}
+      <section className="rounded-[24px] border border-white/[0.12] bg-black/20 p-5 backdrop-blur-xl md:p-6">
+        {loading ? (
+          <div className="flex min-h-[200px] items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-[#00dba3]" />
+          </div>
+        ) : selectedCommittee &&
+          selectedCommittee.members
+            .length > 0 ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {selectedCommittee.members.map(
+              (member) => (
+                <CommitteeMemberEditor
+                  key={member.id}
+                  member={member}
+                  onChanged={async (
+                    message
+                  ) => {
+                    setSuccess(
+                      message
+                    );
+
+                    setError("");
+
+                    await loadCommittees();
+                  }}
+                  onError={(
+                    message
+                  ) => {
+                    setError(
+                      message
+                    );
+
+                    setSuccess("");
+                  }}
+                />
+              )
+            )}
+          </div>
+        ) : (
+          <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
+            <Users className="h-9 w-9 text-white/20" />
+
+            <h3 className="mt-3 font-semibold text-white">
+              No committee members
+            </h3>
+
+            <p className="mt-1 text-sm text-white/40">
+              Add the first member
+              using the form above.
+            </p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-/* ═════════════════════════════════════
-   MEMBER CARD
-═════════════════════════════════════ */
-
-function CommitteeMemberCard({
+function CommitteeMemberEditor({
   member,
-  featured = false,
+  onChanged,
+  onError,
 }: {
   member: CommitteeMember;
-  featured?: boolean;
+
+  onChanged: (
+    message: string
+  ) => Promise<void>;
+
+  onError: (
+    message: string
+  ) => void;
 }) {
-  const imageSource =
-    member.image?.trim()
-      ? member.image
-      : DEFAULT_PERSON_IMAGE;
+  const [editing, setEditing] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [deleting, setDeleting] =
+    useState(false);
+
+  const [name, setName] =
+    useState(member.name);
+
+  const [title, setTitle] =
+    useState(member.title);
+
+  const [order, setOrder] =
+    useState(
+      String(member.order)
+    );
+
+  const [
+    published,
+    setPublished,
+  ] = useState(
+    member.published
+  );
+
+  const [image, setImage] =
+    useState<File | null>(null);
+
+  function cancelEditing() {
+    setName(member.name);
+    setTitle(member.title);
+    setOrder(
+      String(member.order)
+    );
+    setPublished(
+      member.published
+    );
+    setImage(null);
+    setEditing(false);
+  }
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+
+      const formData =
+        new FormData();
+
+      formData.set(
+        "name",
+        name
+      );
+
+      formData.set(
+        "title",
+        title
+      );
+
+      formData.set(
+        "order",
+        order
+      );
+
+      formData.set(
+        "published",
+        String(published)
+      );
+
+      if (image) {
+        formData.set(
+          "image",
+          image
+        );
+      }
+
+      const response =
+        await fetch(
+          `/api/admin/committees/members/${member.id}`,
+          {
+            method: "PATCH",
+            body: formData,
+          }
+        );
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to update member."
+        );
+      }
+
+      setEditing(false);
+      setImage(null);
+
+      await onChanged(
+        "Committee member updated successfully."
+      );
+    } catch (error) {
+      onError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update member."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    const confirmed =
+      window.confirm(
+        `Delete ${member.name}? This action cannot be undone.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      const response =
+        await fetch(
+          `/api/admin/committees/members/${member.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      if (
+        !contentType?.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to delete member."
+        );
+      }
+
+      await onChanged(
+        "Committee member deleted successfully."
+      );
+    } catch (error) {
+      onError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete member."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
-    <article
-      className={`
-        group
-        flex
-        w-full
-        flex-col
-        items-center
-        text-center
+    <article className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-4">
+      <div className="flex gap-4">
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/20">
+          <Image
+            src={
+              member.image ||
+              "/images/defaultPerson.png"
+            }
+            alt={member.name}
+            fill
+            sizes="96px"
+            className="object-contain"
+          />
+        </div>
 
-        ${
-          featured
-            ? "max-w-[290px]"
-            : "max-w-[270px]"
-        }
-      `}
-    >
-      <div
-        className={`
-          relative
-          overflow-hidden
-          border
-          border-[#18d96d]
-          bg-black
+        <div className="min-w-0 flex-1">
+          {!editing ? (
+            <>
+              <h3 className="truncate text-base font-bold text-white">
+                {member.name}
+              </h3>
 
-          ${
-            featured
-              ? `
-                h-[220px]
-                w-[220px]
-                md:h-[240px]
-                md:w-[240px]
-              `
-              : `
-                h-[210px]
-                w-[210px]
-                md:h-[230px]
-                md:w-[230px]
-              `
-          }
-        `}
-      >
-        <Image
-          src={imageSource}
-          alt={member.name}
-          fill
-          sizes={
-            featured
-              ? "(max-width: 768px) 220px, 240px"
-              : "(max-width: 768px) 210px, 230px"
-          }
-          className="
-            object-contain
-            object-bottom
-            transition
-            duration-300
-            group-hover:scale-[1.03]
-          "
-        />
+              <p className="mt-1 text-sm text-[#00dba3]">
+                {member.title}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/40">
+                <span>
+                  Order:{" "}
+                  {member.order}
+                </span>
+
+                <span>•</span>
+
+                <span>
+                  {member.published
+                    ? "Published"
+                    : "Hidden"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <AdminInput
+                label="Name"
+                value={name}
+                onChange={
+                  setName
+                }
+                required
+              />
+
+              <AdminInput
+                label="Title"
+                value={title}
+                onChange={
+                  setTitle
+                }
+                required
+              />
+
+              <AdminInput
+                label="Order"
+                type="number"
+                value={order}
+                onChange={
+                  setOrder
+                }
+              />
+
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/15 px-3 py-2 text-xs text-white/60">
+                <ImagePlus className="h-4 w-4 shrink-0" />
+
+                <span className="truncate">
+                  {image
+                    ? image.name
+                    : "Replace image (optional)"}
+                </span>
+
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(event) =>
+                    setImage(
+                      event.target
+                        .files?.[0] ??
+                        null
+                    )
+                  }
+                />
+              </label>
+
+              <label className="flex items-center gap-2 text-xs text-white/60">
+                <input
+                  type="checkbox"
+                  checked={
+                    published
+                  }
+                  onChange={(event) =>
+                    setPublished(
+                      event.target
+                        .checked
+                    )
+                  }
+                  className="accent-[#00c896]"
+                />
+
+                Published
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
-      <h2 className="mt-5 text-2xl font-black leading-tight text-white">
-        {member.name}
-      </h2>
+      <div className="mt-4 flex justify-end gap-2">
+        {!editing ? (
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                setEditing(true)
+              }
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.07] px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.12]"
+            >
+              <Pencil className="h-4 w-4" />
 
-      <p className="mt-1 text-base font-black text-[#18d96d]">
-        {member.title}
-      </p>
+              Edit
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                deleting
+              }
+              onClick={
+                handleDelete
+              }
+              className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+
+              Delete
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={
+                cancelEditing
+              }
+              className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/70"
+            >
+              <X className="h-4 w-4" />
+
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                saving
+              }
+              onClick={
+                handleSave
+              }
+              className="flex items-center gap-2 rounded-lg bg-[#00a97e] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+
+              Save
+            </button>
+          </>
+        )}
+      </div>
     </article>
   );
 }
 
-/* ═════════════════════════════════════
-   EMPTY COMMITTEE
-═════════════════════════════════════ */
+function AdminInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  required = false,
+}: {
+  label: string;
+  value: string;
 
-function EmptyCommittee() {
+  onChange: (
+    value: string
+  ) => void;
+
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+}) {
   return (
-    <div className="mt-16 flex min-h-[280px] flex-col items-center justify-center gap-4 border border-dashed border-white/10 text-center">
-      <Users className="h-9 w-9 text-white/20" />
+    <label className="block">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/40">
+        {label}
+      </span>
 
-      <div>
-        <h2 className="text-lg font-black text-white">
-          لا يوجد أعضاء حالياً
-        </h2>
-
-        <p className="mt-1 text-sm text-white/40">
-          سيتم عرض أعضاء هذه
-          اللجنة بعد إضافتهم من
-          لوحة التحكم.
-        </p>
-      </div>
-    </div>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        placeholder={
+          placeholder
+        }
+        min={
+          type === "number"
+            ? 0
+            : undefined
+        }
+        onChange={(event) =>
+          onChange(
+            event.target.value
+          )
+        }
+        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#00c896]"
+      />
+    </label>
   );
 }
