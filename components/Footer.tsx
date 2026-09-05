@@ -8,7 +8,7 @@ const socialLinks = [
     icon: "/images/social1.png",
   },
   {
-    href: "https://www.linkedin.com/company/saudi-table-tennis-federation",
+    href: "https://www.linkedin.com/company/%D8%A7%D9%84%D8%A7%D8%AA%D8%AD%D8%A7%D8%AF-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-%D9%84%D9%83%D8%B1%D8%A9-%D8%A7%D9%84%D8%B7%D8%A7%D9%88%D9%84%D8%A9/",
     label: "LinkedIn",
     icon: "/images/social2.png",
   },
@@ -28,7 +28,7 @@ const socialLinks = [
     icon: "/images/social7.png",
   },
   {
-    href: "https://www.snapchat.com/topic/saudi-table-tennis-federation-players",
+    href: "https://snapchat.com/t/okRnvOMd",
     label: "snapchat",
     icon: "/images/social6.png",
   },

@@ -418,16 +418,16 @@ function MatchCard({
           md:px-16
         "
       >
-        {/* Right team */}
-        <ClubLogoOnly
-          club={match.clubOne}
-        />
+        {/* Right team — Club 1 */}
+        <ClubLogoOnly club={match.clubOne} />
 
         {/* Score + date */}
         <div className="flex min-w-[180px] flex-col items-center justify-center text-center">
-          <div className="text-4xl font-black leading-none text-[#00ff6a] md:text-5xl">
-            {match.clubOneScore}:
-            {match.clubTwoScore}
+          <div
+            dir="ltr"
+            className="text-4xl font-black leading-none text-[#00ff6a] md:text-5xl"
+          >
+            {match.clubOneScore}:{match.clubTwoScore}
           </div>
 
           <div className="mt-1 text-sm font-medium text-white/80">
@@ -435,10 +435,8 @@ function MatchCard({
           </div>
         </div>
 
-        {/* Left team */}
-        <ClubLogoOnly
-          club={match.clubTwo}
-        />
+        {/* Left team — Club 2 */}
+        <ClubLogoOnly club={match.clubTwo} />
       </div>
     </article>
   );
