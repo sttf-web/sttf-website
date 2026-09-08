@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
-  Loader2,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
   AlertCircle,
+  CheckCircle2,
+  Eye,
+  Inbox,
+  Loader2,
   Mail,
   MailOpen,
   Search,
-  Inbox,
   X,
 } from "lucide-react";
 
@@ -22,80 +29,343 @@ type Message = {
   updatedAt: string;
 };
 
+type MessagesResponse = {
+  success: boolean;
+  messages?: Message[];
+  error?: string;
+};
+
+type UpdateMessageResponse = {
+  success: boolean;
+  message?: Message;
+  error?: string;
+};
+
 const inputClass =
   "w-full rounded-[14px] border border-white/[0.14] bg-white/[0.08] px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 transition focus:border-[#00c896]/50 focus:ring-2 focus:ring-[#00c896]/15";
 
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(date));
+function formatDate(
+  date: string
+) {
+  return new Intl.DateTimeFormat(
+    "en",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(
+    new Date(date)
+  );
 }
 
 export default function MessagesList() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [
+    messages,
+    setMessages,
+  ] = useState<Message[]>([]);
 
-  const [search, setSearch] = useState("");
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    search,
+    setSearch,
+  ] = useState("");
+
+  const [
+    selectedMessage,
+    setSelectedMessage,
+  ] = useState<Message | null>(
+    null
+  );
+
+  const [
+    markingRead,
+    setMarkingRead,
+  ] = useState(false);
+
+  const [
+    actionError,
+    setActionError,
+  ] = useState("");
+
+  /* ═════════════════════════════════════
+     FETCH
+  ══════════════════════════════════════ */
 
   useEffect(() => {
     async function fetchMessages() {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch("/api/admin/messages", { method: "GET", cache: "no-store" });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to fetch messages");
-        setMessages(data.messages || []);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to fetch messages");
+
+        const response =
+          await fetch(
+            "/api/admin/messages",
+            {
+              method: "GET",
+              cache: "no-store",
+            }
+          );
+
+        const data =
+          (await response.json()) as MessagesResponse;
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              "Failed to fetch messages"
+          );
+        }
+
+        setMessages(
+          data.messages || []
+        );
+      } catch (error: unknown) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch messages"
+        );
       } finally {
         setLoading(false);
       }
     }
-    fetchMessages();
+
+    void fetchMessages();
   }, []);
 
-  // Close modal on Escape key
+  /* ═════════════════════════════════════
+     ESCAPE
+  ══════════════════════════════════════ */
+
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSelectedMessage(null);
+    function onKey(
+      event: KeyboardEvent
+    ) {
+      if (
+        event.key === "Escape" &&
+        !markingRead
+      ) {
+        setSelectedMessage(
+          null
+        );
+
+        setActionError("");
+      }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
-  const filteredMessages = useMemo(() => {
-    const query = search.toLowerCase().trim();
-    if (!query) return messages;
-    return messages.filter((item) =>
-      item.name.toLowerCase().includes(query) ||
-      item.email.toLowerCase().includes(query) ||
-      item.title.toLowerCase().includes(query) ||
-      item.message.toLowerCase().includes(query)
+    window.addEventListener(
+      "keydown",
+      onKey
     );
-  }, [messages, search]);
 
-  /* ── Loading ── */
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        onKey
+      );
+  }, [markingRead]);
+
+  /* ═════════════════════════════════════
+     FILTERS
+  ══════════════════════════════════════ */
+
+  const filteredMessages =
+    useMemo(() => {
+      const query =
+        search
+          .toLowerCase()
+          .trim();
+
+      if (!query) {
+        return messages;
+      }
+
+      return messages.filter(
+        (item) =>
+          item.name
+            .toLowerCase()
+            .includes(query) ||
+          item.email
+            .toLowerCase()
+            .includes(query) ||
+          item.title
+            .toLowerCase()
+            .includes(query) ||
+          item.message
+            .toLowerCase()
+            .includes(query)
+      );
+    }, [
+      messages,
+      search,
+    ]);
+
+  const unreadCount =
+    useMemo(
+      () =>
+        messages.filter(
+          (item) =>
+            !item.isRead
+        ).length,
+      [messages]
+    );
+
+  /* ═════════════════════════════════════
+     OPEN MESSAGE
+  ══════════════════════════════════════ */
+
+  function openMessage(
+    message: Message
+  ) {
+    setSelectedMessage(
+      message
+    );
+
+    setActionError("");
+  }
+
+  function closeMessage() {
+    if (
+      markingRead
+    ) {
+      return;
+    }
+
+    setSelectedMessage(
+      null
+    );
+
+    setActionError("");
+  }
+
+  /* ═════════════════════════════════════
+     MARK AS SEEN
+  ══════════════════════════════════════ */
+
+  async function markAsSeen() {
+    if (
+      !selectedMessage ||
+      selectedMessage.isRead
+    ) {
+      return;
+    }
+
+    try {
+      setMarkingRead(
+        true
+      );
+
+      setActionError("");
+
+      const response =
+        await fetch(
+          "/api/admin/messages",
+          {
+            method: "PATCH",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                id:
+                  selectedMessage.id,
+
+                isRead:
+                  true,
+              }),
+          }
+        );
+
+      const data =
+        (await response.json()) as UpdateMessageResponse;
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Failed to mark message as seen."
+        );
+      }
+
+      if (!data.message) {
+        throw new Error(
+          "The server did not return the updated message."
+        );
+      }
+
+      const updatedMessage =
+        data.message;
+
+      /*
+       * Update main message list.
+       */
+      setMessages(
+        (currentMessages) =>
+          currentMessages.map(
+            (message) =>
+              message.id ===
+              updatedMessage.id
+                ? updatedMessage
+                : message
+          )
+      );
+
+      /*
+       * Update currently-open modal.
+       */
+      setSelectedMessage(
+        updatedMessage
+      );
+    } catch (error: unknown) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to mark message as seen."
+      );
+    } finally {
+      setMarkingRead(
+        false
+      );
+    }
+  }
+
+  /* ═════════════════════════════════════
+     LOADING
+  ══════════════════════════════════════ */
+
   if (loading) {
     return (
-      <section className="flex min-h-[400px] items-center justify-center rounded-[28px] border border-white/[0.12] bg-white/[0.07] p-9 text-white backdrop-blur-2xl shadow-[0_32px_64px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]">
+      <section className="flex min-h-[400px] items-center justify-center rounded-[28px] border border-white/[0.12] bg-white/[0.07] p-9 text-white shadow-[0_32px_64px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl">
         <div className="flex items-center gap-3 text-sm text-white/60">
           <Loader2 className="h-5 w-5 animate-spin text-[#00c896]" />
+
           Loading messages…
         </div>
       </section>
     );
   }
 
-  /* ── Error ── */
+  /* ═════════════════════════════════════
+     ERROR
+  ══════════════════════════════════════ */
+
   if (error) {
     return (
-      <section className="rounded-[28px] border border-red-500/20 bg-white/[0.07] p-9 text-white backdrop-blur-2xl shadow-[0_32px_64px_rgba(0,0,0,0.4)]">
+      <section className="rounded-[28px] border border-red-500/20 bg-white/[0.07] p-9 text-white shadow-[0_32px_64px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         <div className="flex items-center gap-3 rounded-[14px] border border-red-500/30 bg-red-500/10 p-4 text-sm font-medium text-red-300">
           <AlertCircle className="h-4 w-4 shrink-0" />
+
           {error}
         </div>
       </section>
@@ -104,133 +374,203 @@ export default function MessagesList() {
 
   return (
     <>
-      <section className="w-full mt-6 rounded-[28px] border border-white/[0.12] bg-white/[0.07] p-9 text-white shadow-[0_32px_64px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl">
+      <section className="mt-6 w-full rounded-[28px] border border-white/[0.12] bg-white/[0.07] p-6 text-white shadow-[0_32px_64px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl md:p-9">
+        {/* HEADER */}
 
-        {/* ── Header ── */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00c896] to-[#008f6a] shadow-[0_8px_24px_rgba(0,200,150,0.35)]">
               <Mail className="h-6 w-6 text-white" />
             </div>
+
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00e0aa]">
                 STTF Admin
               </p>
+
               <h2 className="mt-0.5 text-xl font-bold tracking-tight text-white">
                 Messages
               </h2>
+
               <p className="mt-1 text-sm text-white/50">
                 View all contact messages sent from the website.
               </p>
             </div>
           </div>
 
-          <div className="shrink-0 rounded-[12px] border border-white/[0.1] bg-white/[0.05] px-4 py-2 text-sm font-medium text-white/50">
-            {messages.length} total
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <div className="rounded-[12px] border border-[#00c896]/25 bg-[#00c896]/10 px-4 py-2 text-sm font-semibold text-[#00e0aa]">
+                {unreadCount} unread
+              </div>
+            )}
+
+            <div className="rounded-[12px] border border-white/[0.1] bg-white/[0.05] px-4 py-2 text-sm font-medium text-white/50">
+              {messages.length} total
+            </div>
           </div>
         </div>
 
-        {/* Divider */}
         <div className="mb-6 h-px bg-white/[0.08]" />
 
-        {/* ── Search ── */}
+        {/* SEARCH */}
+
         <div className="relative mb-6">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={
+              search
+            }
+            onChange={(
+              event
+            ) =>
+              setSearch(
+                event.target
+                  .value
+              )
+            }
             placeholder="Search by name, email, title, or message…"
             className={`${inputClass} pl-11`}
           />
         </div>
 
-        {/* ── Empty state ── */}
-        {filteredMessages.length === 0 ? (
+        {/* EMPTY */}
+
+        {filteredMessages.length ===
+        0 ? (
           <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-white/[0.1] bg-white/[0.03] p-8 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border border-[#00c896]/20 bg-[#00c896]/10">
               <Inbox className="h-6 w-6 text-[#00c896]" />
             </div>
+
             <div>
-              <h3 className="text-base font-semibold text-white">No messages found</h3>
+              <h3 className="text-base font-semibold text-white">
+                No messages found
+              </h3>
+
               <p className="mt-1 text-sm text-white/40">
-                {search ? "Try changing your search query." : "No contact messages have been sent yet."}
+                {search
+                  ? "Try changing your search query."
+                  : "No contact messages have been sent yet."}
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredMessages.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedMessage(item)}
-                className="w-full rounded-[18px] border border-white/[0.08] bg-white/[0.04] p-4 text-left transition hover:border-[#00c896]/30 hover:bg-white/[0.07]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {item.isRead ? (
-                        <MailOpen className="h-3.5 w-3.5 shrink-0 text-white/30" />
-                      ) : (
-                        <Mail className="h-3.5 w-3.5 shrink-0 text-[#00c896]" />
-                      )}
-                      <h3 className="truncate text-sm font-semibold text-white">
-                        {item.title}
-                      </h3>
+            {filteredMessages.map(
+              (item) => (
+                <button
+                  key={
+                    item.id
+                  }
+                  type="button"
+                  onClick={() =>
+                    openMessage(
+                      item
+                    )
+                  }
+                  className={`w-full rounded-[18px] border p-4 text-left transition ${
+                    item.isRead
+                      ? "border-white/[0.08] bg-white/[0.04] hover:border-white/15 hover:bg-white/[0.07]"
+                      : "border-[#00c896]/25 bg-[#00c896]/[0.07] hover:border-[#00c896]/45 hover:bg-[#00c896]/[0.1]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {item.isRead ? (
+                          <MailOpen className="h-3.5 w-3.5 shrink-0 text-white/30" />
+                        ) : (
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-[#00c896]" />
+                        )}
+
+                        <h3
+                          className={`truncate text-sm text-white ${
+                            item.isRead
+                              ? "font-semibold"
+                              : "font-black"
+                          }`}
+                        >
+                          {item.title}
+                        </h3>
+                      </div>
+
+                      <p className="mt-1.5 truncate text-sm text-white/60">
+                        {item.name}
+                      </p>
+
+                      <p className="mt-0.5 truncate text-xs text-white/35">
+                        {item.email}
+                      </p>
                     </div>
-                    <p className="mt-1.5 truncate text-sm text-white/60">{item.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-white/35">{item.email}</p>
+
+                    {!item.isRead && (
+                      <span className="shrink-0 rounded-full bg-[#00c896] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#003d34]">
+                        New
+                      </span>
+                    )}
                   </div>
 
-                  {!item.isRead && (
-                    <span className="shrink-0 rounded-full bg-[#00c896] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#003d34]">
-                      New
-                    </span>
-                  )}
-                </div>
+                  <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/40">
+                    {item.message}
+                  </p>
 
-                <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/40">
-                  {item.message}
-                </p>
-                <p className="mt-2 text-[11px] text-white/25">
-                  {formatDate(item.createdAt)}
-                </p>
-              </button>
-            ))}
+                  <p className="mt-2 text-[11px] text-white/25">
+                    {formatDate(
+                      item.createdAt
+                    )}
+                  </p>
+                </button>
+              )
+            )}
           </div>
         )}
       </section>
 
-      {/* ── Modal ── */}
+      {/* MODAL */}
+
       {selectedMessage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedMessage(null)}
+          onClick={
+            closeMessage
+          }
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-          {/* Panel */}
           <div
-            className="relative z-10 w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[28px] border border-white/[0.12] bg-[#003d34] p-8 text-white shadow-[0_32px_64px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)]"
-            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[28px] border border-white/[0.12] bg-[#003d34] p-6 text-white shadow-[0_32px_64px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)] md:p-8"
+            onClick={(
+              event
+            ) =>
+              event.stopPropagation()
+            }
           >
-            {/* Close button */}
+            {/* CLOSE */}
+
             <button
               type="button"
-              onClick={() => setSelectedMessage(null)}
-              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.07] text-white/50 transition hover:bg-white/[0.12] hover:text-white"
+              onClick={
+                closeMessage
+              }
+              disabled={
+                markingRead
+              }
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.07] text-white/50 transition hover:bg-white/[0.12] hover:text-white disabled:opacity-50"
             >
               <X className="h-4 w-4" />
             </button>
 
-            {/* Modal header */}
+            {/* HEADER */}
+
             <div className="mb-6 border-b border-white/[0.08] pb-5 pr-10">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#00e0aa]">
                   Message Details
                 </p>
+
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                     selectedMessage.isRead
@@ -238,22 +578,74 @@ export default function MessagesList() {
                       : "bg-[#00c896] text-[#003d34]"
                   }`}
                 >
-                  {selectedMessage.isRead ? "Read" : "Unread"}
+                  {selectedMessage.isRead
+                    ? "Seen"
+                    : "Unread"}
                 </span>
               </div>
+
               <h3 className="mt-2 text-xl font-bold leading-snug text-white">
-                {selectedMessage.title}
+                {
+                  selectedMessage.title
+                }
               </h3>
             </div>
 
-            {/* Meta grid */}
+            {/* MARK AS SEEN */}
+
+            {!selectedMessage.isRead && (
+              <div className="mb-5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void markAsSeen()
+                  }
+                  disabled={
+                    markingRead
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#00c896]/30 bg-[#00c896]/10 px-5 py-3 text-sm font-semibold text-[#00e0aa] transition hover:bg-[#00c896]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {markingRead ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+
+                  {markingRead
+                    ? "Marking as seen…"
+                    : "Mark as Seen"}
+                </button>
+              </div>
+            )}
+
+            {selectedMessage.isRead && (
+              <div className="mb-5 flex items-center gap-3 rounded-[14px] border border-[#00c896]/20 bg-[#00c896]/[0.07] px-4 py-3 text-sm font-medium text-[#00e0aa]">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+
+                This message has been seen.
+              </div>
+            )}
+
+            {actionError && (
+              <div className="mb-5 flex items-center gap-3 rounded-[14px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+
+                {actionError}
+              </div>
+            )}
+
+            {/* META */}
+
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.05] p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                   Name
                 </p>
+
                 <p className="mt-2 text-sm font-semibold text-white">
-                  {selectedMessage.name}
+                  {
+                    selectedMessage.name
+                  }
                 </p>
               </div>
 
@@ -261,11 +653,14 @@ export default function MessagesList() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                   Email
                 </p>
+
                 <a
                   href={`mailto:${selectedMessage.email}`}
                   className="mt-2 block break-all text-sm font-semibold text-[#00e0aa] hover:underline"
                 >
-                  {selectedMessage.email}
+                  {
+                    selectedMessage.email
+                  }
                 </a>
               </div>
 
@@ -273,35 +668,52 @@ export default function MessagesList() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                   Sent At
                 </p>
+
                 <p className="mt-2 text-sm font-semibold text-white">
-                  {formatDate(selectedMessage.createdAt)}
+                  {formatDate(
+                    selectedMessage.createdAt
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* Message body */}
+            {/* MESSAGE */}
+
             <div className="mt-4 rounded-[14px] border border-white/[0.08] bg-white/[0.05] p-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                 Message
               </p>
+
               <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/80">
-                {selectedMessage.message}
+                {
+                  selectedMessage.message
+                }
               </p>
             </div>
 
-            {/* Actions */}
-            <div className="mt-6 flex items-center gap-3">
+            {/* ACTIONS */}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                href={`mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.title}`}
-                className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-r from-[#00c896] to-[#008f6a] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,200,150,0.35)] transition hover:shadow-[0_12px_32px_rgba(0,200,150,0.45)]"
+                href={`mailto:${selectedMessage.email}?subject=Re: ${encodeURIComponent(
+                  selectedMessage.title
+                )}`}
+                className="inline-flex items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-[#00c896] to-[#008f6a] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,200,150,0.35)] transition hover:shadow-[0_12px_32px_rgba(0,200,150,0.45)]"
               >
                 <Mail className="h-4 w-4" />
+
                 Reply by Email
               </a>
+
               <button
                 type="button"
-                onClick={() => setSelectedMessage(null)}
-                className="rounded-[14px] border border-white/[0.12] bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white/60 transition hover:bg-white/[0.1] hover:text-white"
+                onClick={
+                  closeMessage
+                }
+                disabled={
+                  markingRead
+                }
+                className="rounded-[14px] border border-white/[0.12] bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white/60 transition hover:bg-white/[0.1] hover:text-white disabled:opacity-50"
               >
                 Close
               </button>
