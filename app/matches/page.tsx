@@ -427,7 +427,7 @@ function MatchCard({
             dir="ltr"
             className="text-4xl font-black leading-none text-[#00ff6a] md:text-5xl"
           >
-            {match.clubOneScore}:{match.clubTwoScore}
+            {match.clubTwoScore}:{match.clubOneScore}
           </div>
 
           <div className="mt-1 text-sm font-medium text-white/80">
